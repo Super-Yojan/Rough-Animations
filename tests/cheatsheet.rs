@@ -116,6 +116,89 @@ impl SeekEnd for Stage {
 }
 
 #[test]
+fn the_themes_on_the_sheet_exist_work_and_behave_as_described() {
+    let section = SHEET
+        .split("## Themes")
+        .nth(1)
+        .and_then(|rest| rest.split("\n## ").next())
+        .expect("the sheet has a Themes section");
+    // Every built-in theme is documented, and each one works by the name the sheet gives.
+    for name in rough_animations::api::theme::NAMES {
+        assert!(section.contains(&format!("\"{name}\"")), "the sheet does not mention theme {name:?}");
+        let mut s = Stage::new(300, 200).theme(*name);
+        s.heading("T", "c");
+        s.add(cube(20).base_at((0, 0, 0)));
+        let end = s.duration();
+        s.render_frame(end);
+    }
+    // The documented custom-theme chain, and the other ways to pass a theme.
+    let ocean = Theme::custom("#06283d", "#e0f2ff").title("#7dd3fc").caption("gray").ink("white").background("#000").sketch(Sketch::clean());
+    let _ = Stage::new(300, 200).theme(ocean);
+    let _ = Stage::new(300, 200).theme(Theme::chalkboard()).theme("sepia");
+    let _ = Theme::by_name("dark").unwrap();
+
+    // "Anything you colour yourself is left alone" and "the theme reaches objects added before it".
+    let mut s = Stage::new(300, 200);
+    let before = s.add(text("early"));
+    let mut s = s.theme("dark");
+    let after = s.add(text("late"));
+    let own = s.add(text("mine").color("rose"));
+    let fill = |s: &Stage, id: Id| s.scene.get(id).unwrap().style.fill;
+    assert_eq!(fill(&s, before), fill(&s, after), "objects added before and after look the same");
+    assert_eq!(fill(&s, own), Some("rose".into_color()), "an explicit colour survives");
+    assert_ne!(fill(&s, after), Some("rose".into_color()));
+
+    // The gotcha: a dark `background` alone leaves dark ink, a theme does not.
+    let dark_ink = Theme::dark().ink;
+    let mut bare = Stage::new(300, 200).background("#101018");
+    let t = bare.add(text("x"));
+    assert_ne!(fill(&bare, t), Some(dark_ink));
+    let mut themed = Stage::new(300, 200).theme("dark");
+    let t = themed.add(text("x"));
+    assert_eq!(fill(&themed, t), Some(dark_ink));
+    assert!(SHEET.contains("`.steady()`"), "the sheet mentions steady()");
+}
+
+#[test]
+fn the_group_api_on_the_sheet_works_as_described() {
+    let mut s = Stage::new(900, 600);
+    let mut car = Group::new();
+    let body = s.add_to(&mut car, cuboid(60, 20, 30).base_at((0, 10, 0)).fill("white"));
+    let wheel = s.add_to(&mut car, cylinder(8, 6).at((20, 8, 16)).rotated((deg(90), 0, 0)));
+    assert_eq!(car.len(), 2, "add_to puts the part in the group, and returns its id");
+
+    // Every animation named on the sheet, and each returns an Anim that takes the usual tweaks.
+    s.play(car.create());
+    s.play(car.fade_in().duration(1));
+    s.play(car.move_by((10, 0, 0)).duration(1).ease(Easing::Linear));
+    s.play(car.move_to((50, 0, 20)));
+    s.play(car.rotate_by((0, deg(90), 0)));
+    s.play(car.clone().pivot((0, 0, 0)).rotate_by((0, deg(45), 0)));
+    s.play(car.scale_by(2));
+    s.play(car.opacity_to(0.5));
+    s.play(car.fade_out().delay(0.2));
+    s.play(car.write());
+    s.play(car.uncreate());
+    s.play(all([car.move_by((1, 0, 0)), fade_in(wheel)]));
+    s.play(create_all(&car));
+    s.play(write_all(&car));
+    s.play(clear(&car));
+    s.place(&car, (0, 0, 0));
+    let end = s.duration();
+    s.seek(end);
+
+    // The claims: move_to puts the bottom centre at the target; place does the same instantly.
+    let mut s = Stage::new(900, 600);
+    let mut g = Group::new();
+    s.add_to(&mut g, cuboid(10, 10, 10).base_at((0, 0, 0)));
+    s.add_to(&mut g, cuboid(10, 10, 10).base_at((20, 0, 0)));
+    s.place(&g, (100, 3, 40));
+    let b = g.bounds(&s.scene).unwrap();
+    assert!(((b.min.x + b.max.x) / 2.0 - 100.0).abs() < 1e-3 && (b.min.y - 3.0).abs() < 1e-3);
+    let _ = body;
+}
+
+#[test]
 fn the_layout_helpers_on_the_sheet_work_as_described() {
     let mut s = Stage::new(1280, 720);
     // put: text is centred on the pixel, solids stand on it.

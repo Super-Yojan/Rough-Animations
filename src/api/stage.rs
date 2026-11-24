@@ -1,5 +1,5 @@
-use crate::animation::{Animation, Group};
-use crate::api::{Error, IntoColor, Num, Result, Sketch};
+use crate::animation::{Animation, Schedule};
+use crate::api::{Error, IntoColor, IntoTheme, Num, Result, Sketch, Theme};
 use crate::render::camera::IsoCamera;
 use crate::render::export::{VideoEncoder, VideoFormat, VideoOptions};
 use crate::world::arena::Id;
@@ -34,12 +34,14 @@ pub struct Stage {
     pub width: u32,
     pub height: u32,
     pub background: Color,
+    /// The theme in force: new objects take their default colours from it.
+    pub theme: Theme,
     /// Frames per second for `render`.
     pub fps: u32,
     /// Reseed rough strokes this many times per second for a "boiling line" look.
     /// `None` (default) keeps strokes perfectly still.
     pub wobble_fps: Option<f32>,
-    script: Group,
+    script: Schedule,
     cursor: f32,
     /// Time up to which the script has been applied to the scene.
     played_to: f32,
@@ -64,10 +66,11 @@ impl Stage {
             scene,
             width,
             height,
-            background: Color::from_rgba8(250, 249, 246, 255),
+            background: Theme::light().background,
+            theme: Theme::light(),
             fps: 30,
             wobble_fps: None,
-            script: Group::new(),
+            script: Schedule::new(),
             cursor: 0.0,
             played_to: -1.0,
             introduced: HashSet::new(),
@@ -76,6 +79,24 @@ impl Stage {
 
     pub fn fps(mut self, fps: impl Num) -> Self {
         self.fps = (fps.f32().round() as u32).max(1);
+        self
+    }
+
+    /// Choose a theme: the page colour plus the default colours of lines, text, titles and
+    /// captions. Pass a built-in name (`"dark"`, `"chalkboard"`, `"blueprint"`, `"sepia"`,
+    /// `"terminal"`, `"light"`) or a [`Theme`]. It applies to objects added before and after;
+    /// anything you colour yourself is left alone. A theme may bring its own strokes (the
+    /// blueprint is drawn with straight lines); a later `.sketch(..)` overrides that.
+    pub fn theme(mut self, theme: impl IntoTheme) -> Self {
+        let theme = theme.into_theme();
+        self.background = theme.background;
+        if let Some(sketch) = theme.sketch {
+            self.scene.set_options(sketch.options());
+        }
+        for object in self.scene.objects_mut() {
+            object.apply_theme(&theme);
+        }
+        self.theme = theme;
         self
     }
 
@@ -127,6 +148,7 @@ impl Stage {
     /// centre of the canvas, or just under it. Any `.at(..)` / `.base_at(..)` overrides that.
     pub fn add(&mut self, object: impl Into<Object>) -> Id {
         let mut object = object.into();
+        object.apply_theme(&self.theme);
         if let Some(home) = object.home.take() {
             let (x, y) = self.home_pixel(home);
             object = object.base_at(self.pixel(x, y));

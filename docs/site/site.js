@@ -22,7 +22,7 @@ function highlightRust(src) {
 function highlightShell(src) {
   return src.split("\n").map(l =>
     l.startsWith("#") ? `<span class="c">${esc(l)}</span>` :
-    esc(l).replace(/^(\$?\s*)(cargo|ffmpeg|cp|git|brew|apt|apt-get|pdflatex)\b/, '$1<span class="f">$2</span>')
+    esc(l).replace(/^(\$?\s*)(cargo|ffmpeg|cp|git|brew|apt|apt-get|pdflatex|curl|claude)\b/, '$1<span class="f">$2</span>')
           .replace(/(\s)(--?[a-z][\w-]*)/g, '$1<span class="t">$2</span>')
   ).join("\n");
 }

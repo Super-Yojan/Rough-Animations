@@ -10,6 +10,7 @@ use crate::primitives::{
     Arrow3D, Box3D, Cone, Cylinder, Line3D, Prism, Shape2D, Sphere, Tex, Text,
 };
 use crate::world::object::{Home, Object};
+use crate::world::style::Role;
 
 /// Box with the given width (x), height (y, up) and depth (z).
 pub fn cuboid(width: impl Num, height: impl Num, depth: impl Num) -> Object {
@@ -99,20 +100,21 @@ pub fn text(content: &str) -> Object {
     Object::new(Text::new(content))
 }
 
-/// A caption or label: [`text`] with a readable default look (size 32, a soft gray). Change
+/// A caption or label: [`text`] with a readable default look (size 32, the theme's caption colour,
+/// a soft gray in the light theme). Change
 /// either with the usual builders: `label("note").font_size(40).color("rose")`.
 ///
 /// Added with no position, it goes just under the title spot (top centre of the canvas).
 pub fn label(content: &str) -> Object {
-    text(content).font_size(32).color("stone").homed(Home::Caption)
+    text(content).font_size(32).role(Role::Caption).homed(Home::Caption)
 }
 
-/// A big title: size 72, deep indigo, and `.animate()` for the lively hand-drawn wobble, which
+/// A big title: size 72, the theme's title colour (deep indigo in the light theme), and `.animate()` for the lively hand-drawn wobble, which
 /// suits large text. `title("Hello").font_size(110)` for a bigger one.
 ///
 /// Added with no position, it goes at the top centre of the canvas: `s.add(title("Hello"))`.
 pub fn title(content: &str) -> Object {
-    text(content).font_size(72).color("indigo").animate().homed(Home::Title)
+    text(content).font_size(72).role(Role::Title).animate().homed(Home::Title)
 }
 
 /// A LaTeX formula in math mode, e.g. `math(r"\int_0^1 x^2\,dx = \frac13")?`. Needs

@@ -1,7 +1,9 @@
 //! `use rough_animations::prelude::*;` is all a script needs.
 
 // Stage, look, errors, numbers and colours.
-pub use crate::api::{Error, IntoColor, IntoTag, Num, Pos, Result, Side, Sketch, Stage, deg};
+pub use crate::api::{
+    Error, Group, IntoColor, IntoTag, IntoTheme, Num, Pos, Result, Side, Sketch, Stage, Theme, deg,
+};
 
 // Shapes: cuboid, cube, cylinder, cone, sphere, circle, ellipse, rect, ngon, star, polygon,
 // prism, line, arrow, text, label, title, math, latex.

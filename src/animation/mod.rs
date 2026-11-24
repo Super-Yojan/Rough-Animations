@@ -7,7 +7,7 @@
 mod anim;
 mod animate;
 pub mod easing;
-mod group;
+mod schedule;
 mod morph;
 
 pub use animate::{
@@ -17,7 +17,7 @@ pub use animate::{
 pub use easing::Easing;
 pub use morph::{IntoRegion, Morph, TransformInto, morph, transform_into};
 pub use anim::{Anim, all, clear, create_all, lag, seq, write_all};
-pub use group::{Group, wait};
+pub use schedule::{Schedule, wait};
 
 use crate::world::arena::Id;
 use crate::world::scene::Scene;

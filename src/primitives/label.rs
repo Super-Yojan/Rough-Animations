@@ -6,7 +6,7 @@ use crate::primitives::{DrawCtx, Geometry};
 use crate::text::handwriting::{PEN_WIDTH, handwrite};
 use crate::text::{Align, DEFAULT_TRACKING, Font, GlyphRun, TexError, TexOptions, tex};
 use crate::world::bounds::Aabb;
-use crate::world::style::{Style, rgb};
+use crate::world::style::Style;
 use crate::world::transform::Transform;
 use euclid::default::Point2D;
 use roughr::core::FillStyle;
@@ -196,7 +196,7 @@ impl Label {
 
 /// Solid dark ink, no outline: crisp and readable at any size.
 fn ink_style() -> Style {
-    let ink = rgb(35, 35, 40);
+    let ink = crate::world::style::ink();
     Style {
         fill: Some(ink),
         stroke: ink,
@@ -383,6 +383,7 @@ mod tests {
     use crate::api::stage::Stage;
     use crate::primitives::Box3D;
     use crate::render::camera::IsoCamera;
+    use crate::world::style::rgb;
     use crate::text::TexOptions;
     use crate::world::scene::Scene;
     use roughr::core::Options;

@@ -14,7 +14,7 @@
   <a class="l" href="index.html#gallery">Gallery</a>
   <a class="l" href="docs.html"><b>Docs</b></a>
   <span class="sp"></span>
-  <a class="l" href="https://github.com/Super-Yojan/rough-animations">GitHub</a>
+  <a class="l" href="https://github.com/Super-Yojan/Rough-Animations">GitHub</a>
   <a class="btn primary" href="#quick-start">Quick start</a>
 </div></header>
 
@@ -39,10 +39,12 @@
   <h4>Animating</h4>
   <a href="#animations" data-k="create write fade move rotate scale morph">Animations</a>
   <a href="#timing" data-k="duration ease delay then with easing">Timing &amp; easing</a>
-  <a href="#combining" data-k="all seq lag group stagger">Combining</a>
+  <a href="#combining" data-k="all seq lag stagger">Combining</a>
+  <a href="#groups" data-k="group rover move_by move_to rotate_by scale_by pivot place add_to parts">Groups</a>
   <a href="#morphing" data-k="morph transform_into">Morphing</a>
   <h4>Layout &amp; look</h4>
   <a href="#layout" data-k="put tag heading pixel screen">Layout helpers</a>
+  <a href="#themes" data-k="theme dark chalkboard blueprint sepia terminal light custom background colours">Themes</a>
   <a href="#look" data-k="sketch clean wobble roughness hatch">The look</a>
   <h4>Output</h4>
   <a href="#rendering" data-k="render mp4 gif png webm still">Rendering</a>
@@ -67,7 +69,7 @@
 <p>Add the crate from Git, since it is not published on crates.io:</p>
 <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>Cargo.toml</span><button>copy</button></div>
 <pre><code data-lang="toml">[dependencies]
-rough-animations = { git = "https://github.com/Super-Yojan/rough-animations" }</code></pre></div>
+rough-animations = { git = "https://github.com/Super-Yojan/Rough-Animations" }</code></pre></div>
 <table>
 <tr><th>For</th><th>You need</th></tr>
 <tr><td>Building</td><td>Rust 1.85 or newer (the crate uses edition 2024)</td></tr>
@@ -117,7 +119,8 @@ let top = s.add(cube(60).base_at((0, 40, 0)).fill("amber"));</code></pre></div>
 <tr><th>Method</th><th>What it does</th></tr>
 <tr><td><code>Stage::new(w, h)</code></td><td>A canvas in pixels, with the sketch look and isometric camera</td></tr>
 <tr><td><code>.fps(n)</code></td><td>Frames per second of the video</td></tr>
-<tr><td><code>.background(c)</code></td><td>Page colour, e.g. <code>"#101018"</code></td></tr>
+<tr><td><code>.theme(t)</code></td><td>The page colour plus the default colours of lines, text, titles and captions, e.g. <code>"dark"</code>. See <a href="#themes">Themes</a></td></tr>
+<tr><td><code>.background(c)</code></td><td>The page colour only. For a dark page use a <a href="#themes">theme</a>, so lines and text change too</td></tr>
 <tr><td><code>.origin(x, y)</code></td><td>Screen pixel where <code>(0,0,0)</code> lands</td></tr>
 <tr><td><code>.zoom(f)</code></td><td>Scale the scene; line widths and text keep their size</td></tr>
 <tr><td><code>.sketch(Sketch)</code></td><td>How hand-drawn lines look, see <a href="#look">The look</a></td></tr>
@@ -148,7 +151,7 @@ let top = s.add(cube(60).base_at((0, 40, 0)).fill("amber"));</code></pre></div>
 <p><code>create</code>, <code>write</code> and <code>fade_in</code> hide their object until they start, so just <code>add</code> it and never hide it yourself. Other animations do not hide anything.</p>
 
 <h2 id="colors">Colours</h2>
-<p>A colour is a name, a hex string like <code>"#a882ff"</code> (also <code>"#rgb"</code>), or an <code>(r, g, b)</code> tuple. A wrong name panics and lists the valid ones.</p>
+<p>A colour is a name, a hex string like <code>"#a882ff"</code> (also <code>"#rgb"</code>), or an <code>(r, g, b)</code> tuple. A wrong name panics and lists the valid ones. <code>ink</code>, <code>indigo</code> and <code>stone</code> are the light theme's default ink, title and caption colours; other <a href="#themes">themes</a> use their own.</p>
 <div class="swatches">
 <span class="sw"><i style="background:#a882ff"></i>purple</span><span class="sw"><i style="background:#73d2a5"></i>mint</span><span class="sw"><i style="background:#ffb96e"></i>amber</span><span class="sw"><i style="background:#82c3ff"></i>sky</span><span class="sw"><i style="background:#ff788c"></i>rose</span><span class="sw"><i style="background:#fad75a"></i>gold</span><span class="sw"><i style="background:#e1e1e8"></i>slate</span><span class="sw"><i style="background:#232328"></i>ink</span><span class="sw"><i style="background:#3c3278"></i>indigo</span><span class="sw"><i style="background:#6a6a80"></i>stone</span><span class="sw"><i style="background:#dc3c3c"></i>red</span><span class="sw"><i style="background:#50b464"></i>green</span><span class="sw"><i style="background:#4678dc"></i>blue</span><span class="sw"><i style="background:#f5963c"></i>orange</span><span class="sw"><i style="background:#f5d746"></i>yellow</span><span class="sw"><i style="background:#f596be"></i>pink</span><span class="sw"><i style="background:#3caaaa"></i>teal</span><span class="sw"><i style="background:#966446"></i>brown</span><span class="sw"><i style="background:#96969e"></i>gray</span><span class="sw"><i style="background:#000"></i>black</span><span class="sw"><i style="background:#fff"></i>white</span>
 </div>
@@ -206,15 +209,16 @@ s.add(prism(plate, 40).base_at((90, 0, 0)).fill("rose"));</code></pre></div>
 <table>
 <tr><th>Function</th><th>Description</th></tr>
 <tr><td><code>text("..")</code></td><td>Plain text in the handwriting font</td></tr>
-<tr><td><code>label("..")</code></td><td>A steady caption: size 32, stone grey</td></tr>
-<tr><td><code>title("..")</code></td><td>A big lively title: size 72, indigo, <code>.animate()</code>d</td></tr>
+<tr><td><code>label("..")</code></td><td>A steady caption: size 32, in the theme's caption colour (stone grey in the light theme)</td></tr>
+<tr><td><code>title("..")</code></td><td>A big lively title: size 72, in the theme's title colour (indigo in the light theme), <code>.animate()</code>d</td></tr>
 <tr><td><code>math(r"\frac12")?</code></td><td>A formula in math mode. Returns a <code>Result</code>, so use <code>?</code></td></tr>
 <tr><td><code>latex("..")?</code></td><td>Arbitrary LaTeX</td></tr>
 </table>
-<p>Text builders: <code>.font_size(n)</code>, <code>.tracking(em)</code> (letter spacing, default 0.06), <code>.animate()</code>, <code>.handwritten()</code>, plus the usual colours.</p>
+<p>Text builders: <code>.font_size(n)</code>, <code>.tracking(em)</code> (letter spacing, default 0.06), <code>.animate()</code>, <code>.steady()</code>, <code>.handwritten()</code>, plus the usual colours.</p>
 <ul>
 <li><strong>Default:</strong> crisp and steady, solid fill, written on with a wipe. It stays readable.</li>
 <li><strong><code>.animate()</code></strong> adds the lively hand-drawn wobble. Great on a big title, hard to read when small.</li>
+<li><strong><code>.steady()</code></strong> is the opposite: it calms a <code>title(..)</code> that is too small to wobble legibly.</li>
 <li><strong><code>.handwritten()</code></strong> makes text, <code>math</code> or <code>latex</code> look written by hand: wobbly, slightly uneven letters, a drifting baseline and a pen's weight. It is calculated once, so it does not flicker.</li>
 <li><code>.solid()</code> and <code>.hatched()</code> switch the fill; <code>.stroke_width(w)</code> adds a sketchy outline.</li>
 </ul>
@@ -271,6 +275,39 @@ s.play(lag(0.3, parts.map(|id| create(id).duration(0.9))));
 s.wait(1);
 s.play(clear(&amp;parts));     // wipe the scene before the next idea</code></pre></div>
 
+<h2 id="groups">Groups</h2>
+<p>A thing made of several parts, like a rover or a character, is a <code>Group</code>. Add the parts, then move, turn, scale and fade the whole thing as one. Each part is still an ordinary object that you can animate on its own.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>rover.rs</span><button>copy</button></div>
+<pre><code>let mut s = Stage::new(900, 600);
+let mut rover = Group::new();
+s.add_to(&amp;mut rover, cuboid(120, 30, 70).base_at((0, 10, 0)).fill("white"));
+let wheel = s.add_to(&amp;mut rover, cylinder(14, 10).at((40, 14, 40)).rotated((deg(90), 0, 0)).fill("ink"));
+s.place(&amp;rover, (-80, 0, 40));                   // set it down instantly
+
+s.play(rover.create());                          // the parts build up one after another
+s.play(rover.move_by((160, 0, 0)).duration(2));  // the whole rover drives
+s.play(rover.rotate_by((0, deg(90), 0)));        // and turns on the spot, wheels included
+s.play(fade_out(wheel));                         // a part is still an ordinary object</code></pre></div>
+<img src="rover.png" alt="A rover built as a group" style="border:1.5px solid var(--ink);border-radius:12px;max-width:760px">
+<table>
+<tr><th>Method</th><th>What it does</th></tr>
+<tr><td><code>Group::new()</code></td><td>An empty group. <code>Group::from([a, b])</code> and <code>.collect::&lt;Group&gt;()</code> also work</td></tr>
+<tr><td><code>s.add_to(&amp;mut group, obj) -&gt; Id</code></td><td>Add an object and put it in the group; returns the part's id</td></tr>
+<tr><td><code>group.add(id)</code></td><td>Put an object that is already in the stage into the group</td></tr>
+<tr><td><code>.move_by(d)</code></td><td>Shift every part by <code>d</code></td></tr>
+<tr><td><code>.move_to(p)</code></td><td>Move the group so the bottom centre of its bounding box is at <code>p</code>, like <code>base_at</code></td></tr>
+<tr><td><code>.rotate_by(angles)</code></td><td>Turn it like one object around its pivot (radians, see <code>deg</code>). Parts orbit the pivot and turn themselves, so wheels stay correct</td></tr>
+<tr><td><code>.scale_by(k)</code></td><td>Grow or shrink around the pivot (2 is twice the size)</td></tr>
+<tr><td><code>.create()</code> <code>.write()</code></td><td>The parts build up one after another (3 s at most; use <code>.duration(..)</code> to change)</td></tr>
+<tr><td><code>.fade_in()</code> <code>.fade_out()</code> <code>.opacity_to(a)</code> <code>.uncreate()</code></td><td>Act on every part at once</td></tr>
+<tr><td><code>group.pivot(p)</code></td><td>Turn and scale around the world point <code>p</code> instead of the bottom centre</td></tr>
+<tr><td><code>s.place(&amp;group, p)</code></td><td>Move it instantly (no animation) so its bottom centre is at <code>p</code></td></tr>
+<tr><td><code>group.bounds(&amp;s.scene)</code></td><td>The box around every part right now</td></tr>
+</table>
+<p>Every animation returns an <code>Anim</code>, so <code>.duration()</code>, <code>.ease()</code>, <code>.delay()</code> and <code>all([..])</code> work on them. A group also works with <code>create_all(&amp;group)</code>, <code>write_all(&amp;group)</code> and <code>clear(&amp;group)</code>.</p>
+<div class="note warn"><b>Move the group, not each part.</b> Calling <code>move_to</code> on every part would stack them all on one point. <code>group.move_by(..)</code> shifts them together and keeps the shape.</div>
+<p>A group's position is the <strong>bottom centre of its bounding box</strong>, so <code>move_to((x, 0, z))</code> puts whatever it holds on the floor there. Groups do not nest by themselves (use <code>group.extend(other.iter())</code>), scaling is uniform, there is no absolute <code>rotate_to</code>, and upright text in a group moves with it but does not rotate. <code>examples/rover.rs</code> is a worked example.</p>
+
 <h2 id="morphing">Morphing</h2>
 <p><code>morph(id, shape)</code> turns a flat shape, or an extruded solid, into another flat shape or prism. Outlines are paired, given the same number of points, and interpolated. <code>transform_into(id, other_id)</code> also takes the target's position and colours; add the target with <code>s.add</code> first (it stays hidden until used).</p>
 <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>morph.rs</span><button>copy</button></div>
@@ -284,7 +321,7 @@ s.play(morph(a, star(5, 70, 30)).ease(Easing::BackOut));   // circle into a star
 <tr><th>Helper</th><th>What it does</th></tr>
 <tr><td><code>s.put(obj, x, y)</code></td><td>Add <code>obj</code> standing on screen pixel <code>(x, y)</code>; text and flat shapes are centred there</td></tr>
 <tr><td><code>s.tag(id, "name", Side::Above)</code></td><td>Label beside an object. <code>Side</code> is <code>Above</code>, <code>Below</code>, <code>Left</code> or <code>Right</code>. Pass <code>label("x").color("rose")</code> to style it</td></tr>
-<tr><td><code>s.heading("Title", "caption")</code></td><td>Header and caption near the top, sized to the canvas; returns their ids (<code>""</code> for no caption)</td></tr>
+<tr><td><code>s.heading("Title", "caption")</code></td><td>Header and caption near the top, sized to the canvas (the title only wobbles on canvases 576 px tall or more); returns their ids (<code>""</code> for no caption)</td></tr>
 <tr><td><code>s.pixel(x, y)</code></td><td>The world floor point under a screen pixel (call after <code>origin</code>/<code>zoom</code>)</td></tr>
 <tr><td><code>s.screen(point)</code></td><td>The pixel a world point lands on</td></tr>
 <tr><td><code>obj.dimensions()</code></td><td>A text object's size in pixels</td></tr>
@@ -296,6 +333,42 @@ s.tag(box_id, "compute", Side::Above);
 s.put(label("note"), 200, 600);</code></pre></div>
 <p>A <code>title(..)</code> or <code>label(..)</code> added with plain <code>s.add(..)</code> and no <code>.at(..)</code> goes to the top centre, and just under it.</p>
 <div class="note"><b>Name clash</b> A variable called <code>title</code> or <code>label</code> hides the function of the same name for the rest of its scope. Name the variable something else.</div>
+
+<h2 id="themes">Themes</h2>
+<p>A theme is the page colour plus the default colours of lines, text, titles and captions, chosen together with one call. The same script then looks right on white paper, a chalkboard or a blueprint.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>themes</span><button>copy</button></div>
+<pre><code>let mut s = Stage::new(900, 600).theme("dark");
+s.heading("Title", "caption");                         // themed automatically
+s.add(cube(80).base_at((0, 0, 0)).fill("mint"));       // outlines use the theme's ink
+s.add(text("plain text").at(s.pixel(450, 500)));       // so does text</code></pre></div>
+<img src="themes.png" alt="The same scene in each built-in theme" style="border:1.5px solid var(--ink);border-radius:12px;max-width:760px">
+<table>
+<tr><th>Theme</th><th>Look</th><th>Colours</th></tr>
+<tr><td><code>"light"</code></td><td>The default look: warm white paper, dark ink, indigo titles.</td><td><div class="swatches" style="margin:0"><span class="sw"><i style="background:#faf9f6"></i>page</span><span class="sw"><i style="background:#232328"></i>ink</span><span class="sw"><i style="background:#3c3278"></i>title</span><span class="sw"><i style="background:#6a6a80"></i>caption</span></div></td></tr>
+<tr><td><code>"dark"</code></td><td>A near-black page with soft white ink.</td><td><div class="swatches" style="margin:0"><span class="sw"><i style="background:#101018"></i>page</span><span class="sw"><i style="background:#e8e8f0"></i>ink</span><span class="sw"><i style="background:#c9c3ff"></i>title</span><span class="sw"><i style="background:#9a9ab0"></i>caption</span></div></td></tr>
+<tr><td><code>"chalkboard"</code></td><td>A green classroom board with chalk-white lines and rougher strokes.</td><td><div class="swatches" style="margin:0"><span class="sw"><i style="background:#1f3a2e"></i>page</span><span class="sw"><i style="background:#f1f1e6"></i>ink</span><span class="sw"><i style="background:#ffe08a"></i>title</span><span class="sw"><i style="background:#b8d4c2"></i>caption</span></div></td></tr>
+<tr><td><code>"blueprint"</code></td><td>White technical lines on blueprint blue, with straight, tidy strokes.</td><td><div class="swatches" style="margin:0"><span class="sw"><i style="background:#14447f"></i>page</span><span class="sw"><i style="background:#e6f0ff"></i>ink</span><span class="sw"><i style="background:#ffffff"></i>title</span><span class="sw"><i style="background:#a8c8f2"></i>caption</span></div></td></tr>
+<tr><td><code>"sepia"</code></td><td>Aged paper with brown ink.</td><td><div class="swatches" style="margin:0"><span class="sw"><i style="background:#f4ecd8"></i>page</span><span class="sw"><i style="background:#3b2f20"></i>ink</span><span class="sw"><i style="background:#7a3e12"></i>title</span><span class="sw"><i style="background:#7d6a4c"></i>caption</span></div></td></tr>
+<tr><td><code>"terminal"</code></td><td>Green phosphor on black, with straight lines.</td><td><div class="swatches" style="margin:0"><span class="sw"><i style="background:#0a0f0a"></i>page</span><span class="sw"><i style="background:#7cfc9a"></i>ink</span><span class="sw"><i style="background:#c8ffd6"></i>title</span><span class="sw"><i style="background:#4fae6a"></i>caption</span></div></td></tr>
+</table>
+<div class="note warn"><b>A dark page needs a theme.</b> Setting only <code>.background("#101018")</code> changes the page but leaves lines and text in the default dark ink, so they vanish. Use <code>.theme("dark")</code>.</div>
+<h3 id="custom-themes">Your own theme</h3>
+<p><code>Theme::custom(page, ink)</code> builds one. Titles use the ink, and captions are the ink faded a third of the way into the page; adjust them with the builders.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>custom theme</span><button>copy</button></div>
+<pre><code>let ocean = Theme::custom("#06283d", "#e0f2ff")   // the page, then the ink
+    .title("#7dd3fc");                            // also .caption(c) .ink(c) .background(c) .sketch(s)
+let mut s = Stage::new(900, 600).theme(ocean);
+
+let dark = Theme::by_name("dark");                // Option&lt;Theme&gt;; Theme::all() lists every built-in one</code></pre></div>
+<h3 id="theme-rules">How a theme behaves</h3>
+<ul>
+<li>Colours you choose yourself (<code>.fill</code>, <code>.stroke</code>, <code>.color</code>) are never touched. A theme only changes the defaults.</li>
+<li>Order does not matter: a theme reaches objects added before it too, and a later theme replaces an earlier one.</li>
+<li>Some themes bring their own strokes: blueprint and terminal are drawn straight, chalkboard rougher. A later <code>.sketch(..)</code> overrides that, and a theme without strokes keeps the ones you chose.</li>
+<li>Filled shapes still hide the lines behind them, and the patch that does it follows the themed page.</li>
+<li>Named palette colours like <code>"mint"</code> are the same in every theme; only the defaults change.</li>
+<li>An unknown theme name panics and lists the valid ones, like an unknown colour does.</li>
+</ul>
 
 <h2 id="look">The look</h2>
 <p><code>Sketch::default()</code> is the classic whiteboard look. <code>Sketch::clean()</code> gives straight lines with the same hatching.</p>
@@ -310,7 +383,7 @@ s.put(label("note"), 200, 600);</code></pre></div>
 <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>look.rs</span><button>copy</button></div>
 <pre><code>let s = Stage::new(900, 600)
     .sketch(Sketch::default().roughness(2.0).hatch_gap(9.0))
-    .background("#101018")
+    .theme("dark")     // the page and the default ink; see Themes
     .wobble(8);        // redraw strokes 8x a second: boiling lines</code></pre></div>
 <p>Strokes are seeded per object, so they stay put from frame to frame instead of shimmering, unless you ask for <code>wobble</code>.</p>
 
@@ -334,6 +407,12 @@ s.render("target/out.png")        // then the last frame, from the same stage</c
 <p><code>examples/avatar.rs</code> builds a 3D avatar from boxes and flat shapes that draws itself, blinks and smiles. The trick is to stack boxes with <code>base_at</code> and lay the face on the head's front plane with <code>.on(Plane::Front)</code>.</p>
 <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span><button>copy</button></div>
 <pre><code data-lang="sh">cargo run --release --example avatar</code></pre></div>
+<h3 id="recipe-rover">Move a whole thing at once</h3>
+<p><code>examples/rover.rs</code> builds a rover from boxes, wheels, a mast and a phone as one <a href="#groups">Group</a>, then drives it, turns it on the spot and drives again. The group moves and turns as one while every part stays an ordinary object.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span><button>copy</button></div>
+<pre><code data-lang="sh">cargo run --release --example rover</code></pre></div>
+<h3 id="recipe-themes">Try every theme</h3>
+<p><code>examples/themes.rs</code> draws one scene in all six built-in <a href="#themes">themes</a> and tiles them into <code>target/themes.png</code>. It is also a template for writing a script that looks right in any theme: nothing in it picks a colour for lines or text.</p>
 <h3 id="recipe-examples">Run the bundled examples</h3>
 <table>
 <tr><th>Example</th><th>Produces</th></tr>
@@ -344,6 +423,8 @@ s.render("target/out.png")        // then the last frame, from the same stage</c
 <tr><td><code>morph</code></td><td><code>target/morph.mp4</code>, shapes and solids morphing</td></tr>
 <tr><td><code>text</code></td><td><code>target/text.mp4</code> and <code>.png</code>, labels and a formula</td></tr>
 <tr><td><code>avatar</code></td><td>a blocky 3D avatar that draws itself, blinks and smiles</td></tr>
+<tr><td><code>rover</code></td><td><code>target/rover.mp4</code> and <code>.png</code>, a rover built as a <code>Group</code> that drives and turns</td></tr>
+<tr><td><code>themes</code></td><td><code>target/themes.png</code>, the same scene in all six built-in themes</td></tr>
 <tr><td><code>handwritten</code></td><td><code>target/handwritten.png</code>, typeset vs handwritten formulas</td></tr>
 <tr><td><code>occlusion</code></td><td><code>target/occlusion.png</code>, stacking and overlap</td></tr>
 <tr><td><code>intro</code></td><td><code>docs/media/intro.mp4</code>, the intro video</td></tr>
@@ -352,14 +433,32 @@ s.render("target/out.png")        // then the last frame, from the same stage</c
 <pre><code data-lang="sh">cargo run --release --example hello</code></pre></div>
 
 <h2 id="agents">Using it with agents</h2>
-<p>The library is designed to be driven by an AI agent. The repo includes a Claude Code skill that teaches the workflow: write a short script, draw a still first, then check the motion from sampled frames, because an agent cannot watch a video. It also bundles the whole API and a table of what each error means.</p>
-<p>Agents working in this repo pick it up automatically. To use it from another project, copy it in:</p>
+<p>The library is designed to be driven by an AI agent. The repo includes a skill that teaches the workflow: write a short script, draw a still first, then check the motion from sampled frames, because an agent cannot watch a video. It also bundles the whole API and a table of what each error means.</p>
+<h3 id="install-skill">Install the skill</h3>
+<p><strong>Claude Code</strong>, as a plugin:</p>
 <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span><button>copy</button></div>
-<pre><code data-lang="sh">cp -r .claude/skills/rough-animations ~/.claude/skills/        # for every project
-# or: cp -r .claude/skills/rough-animations &lt;your-project&gt;/.claude/skills/</code></pre></div>
+<pre><code data-lang="sh">/plugin marketplace add Super-Yojan/rough-animations
+/plugin install rough-animations@rough-animations</code></pre></div>
+<p>Or in one step on newer versions: <code>/plugin install rough-animations --marketplace Super-Yojan/rough-animations</code>.</p>
+<p><strong>Any agent</strong>, with one line. It downloads the skill and puts it in <code>~/.claude/skills</code>:</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span><button>copy</button></div>
+<pre><code data-lang="sh">curl -fsSL https://raw.githubusercontent.com/Super-Yojan/rough-animations/main/scripts/install-skill.sh | bash</code></pre></div>
+<p>Add options after <code>bash -s --</code>:</p>
+<table>
+<tr><th>Option</th><th>Does</th></tr>
+<tr><td><code>--project</code></td><td>Install for the current project only (<code>./.claude/skills</code>)</td></tr>
+<tr><td><code>--dir PATH</code></td><td>Install into <code>PATH/rough-animations</code>, for any agent that reads <code>SKILL.md</code> folders. Give the folder that agent loads skills from</td></tr>
+<tr><td><code>--ref NAME</code></td><td>Install a particular branch or tag</td></tr>
+<tr><td><code>--uninstall</code></td><td>Remove it again. It refuses to delete a folder that is not this skill</td></tr>
+</table>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span><button>copy</button></div>
+<pre><code data-lang="sh">curl -fsSL .../install-skill.sh | bash -s -- --dir ~/my-agent/skills</code></pre></div>
+<p>Running it again updates the skill in place. It needs <code>bash</code>, <code>curl</code> and <code>tar</code> (on Windows, use WSL or Git Bash).</p>
+<p><strong>By hand:</strong> copy the <code>skills/rough-animations</code> folder from the repo into your agent's skills folder.</p>
+<p>Agents working inside a clone of the repo get the skill automatically. It lives in <code>skills/rough-animations</code>, and <code>.claude/skills/rough-animations</code> links to it.</p>
 <p>Two helper scripts let an agent look at what it made:</p>
 <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span><button>copy</button></div>
-<pre><code data-lang="sh">S=.claude/skills/rough-animations/scripts
+<pre><code data-lang="sh">S=~/.claude/skills/rough-animations/scripts   # wherever the skill lives
 $S/contact-sheet.sh target/out.mp4 1.5 4 target/sheet.png   # every 1.5 s, 4 per row
 $S/frame.sh target/out.mp4 3.2 target/at3.png               # one frame at 3.2 s
 $S/frame.sh target/out.mp4 -0.5 target/end.png              # a negative time counts from the end</code></pre></div>
@@ -375,14 +474,16 @@ $S/frame.sh target/out.mp4 -0.5 target/end.png              # a negative time co
 <tr><td>Booleans</td><td><code>.union(b)</code> <code>.minus(b)</code> <code>.intersect(b)</code> <code>.xor(b)</code></td></tr>
 <tr><td>Other</td><td><code>line(a,b)</code> <code>arrow(a,b)</code> <code>label("..")</code> <code>title("..")</code> <code>text("..")</code> <code>math(r"..")?</code> <code>latex("..")?</code></td></tr>
 <tr><td>Builders</td><td><code>.at</code> <code>.base_at</code> <code>.fill</code> <code>.stroke</code> <code>.color</code> <code>.opacity</code> <code>.stroke_width</code> <code>.rotated</code> <code>.scaled</code> <code>.layer</code> <code>.hidden</code> <code>.shift</code> <code>.on</code></td></tr>
-<tr><td>Text</td><td><code>.font_size</code> <code>.tracking</code> <code>.animate</code> <code>.handwritten</code> <code>.solid</code> <code>.hatched</code></td></tr>
+<tr><td>Text</td><td><code>.font_size</code> <code>.tracking</code> <code>.animate</code> <code>.steady</code> <code>.handwritten</code> <code>.solid</code> <code>.hatched</code></td></tr>
 <tr><td>Appear</td><td><code>create</code> <code>write</code> <code>fade_in</code> / <code>uncreate</code> <code>fade_out</code></td></tr>
 <tr><td>Move</td><td><code>move_to</code> <code>move_by</code> <code>move_from</code></td></tr>
 <tr><td>Change</td><td><code>rotate_to/by</code> <code>scale_to</code> <code>opacity_to</code> <code>fill_to</code> <code>stroke_to</code></td></tr>
 <tr><td>Shape</td><td><code>morph</code> <code>transform_into</code></td></tr>
 <tr><td>Tweak</td><td><code>.duration</code> <code>.ease</code> <code>.delay</code> <code>.then</code> <code>.with</code></td></tr>
-<tr><td>Group</td><td><code>all</code> <code>seq</code> <code>lag</code> <code>write_all</code> <code>create_all</code> <code>clear</code></td></tr>
-<tr><td>Stage</td><td><code>new</code> <code>.fps</code> <code>.background</code> <code>.origin</code> <code>.zoom</code> <code>.wobble</code> <code>.sketch</code> / <code>add</code> <code>play</code> <code>wait</code> <code>render</code> <code>pixel</code></td></tr>
+<tr><td>Combine</td><td><code>all</code> <code>seq</code> <code>lag</code> <code>write_all</code> <code>create_all</code> <code>clear</code></td></tr>
+<tr><td>Groups</td><td><code>Group::new</code> <code>s.add_to</code> <code>.move_to</code> <code>.move_by</code> <code>.rotate_by</code> <code>.scale_by</code> <code>.create</code> <code>.write</code> <code>.fade_in</code> <code>.fade_out</code> <code>.opacity_to</code> <code>.uncreate</code> <code>.pivot</code> <code>s.place</code></td></tr>
+<tr><td>Themes</td><td><code>.theme("dark")</code> (<code>light</code> <code>dark</code> <code>chalkboard</code> <code>blueprint</code> <code>sepia</code> <code>terminal</code>) <code>Theme::custom(page, ink)</code> <code>.title</code> <code>.caption</code> <code>.ink</code> <code>.background</code> <code>.sketch</code> <code>Theme::by_name</code></td></tr>
+<tr><td>Stage</td><td><code>new</code> <code>.fps</code> <code>.theme</code> <code>.background</code> <code>.origin</code> <code>.zoom</code> <code>.wobble</code> <code>.sketch</code> / <code>add</code> <code>play</code> <code>wait</code> <code>render</code> <code>pixel</code></td></tr>
 <tr><td>Layout</td><td><code>put</code> <code>tag</code> <code>heading</code> <code>screen</code> <code>dimensions</code></td></tr>
 </table>
 <p>Lower-level control (<code>Scene</code>, <code>Region</code>, custom <code>Geometry</code>, <code>Stage::with</code>) lives in the modules, not the prelude.</p>
@@ -398,6 +499,9 @@ $S/frame.sh target/out.mp4 -0.5 target/end.png              # a negative time co
 <tr><td><code>LaTeX error: Undefined control sequence</code></td><td>A macro is misspelled. <code>math</code> needs <code>pdflatex</code> plus <code>pdftocairo</code> or <code>mutool</code>.</td></tr>
 <tr><td>Object drawn in the wrong depth order</td><td>Solids that pass through each other are sorted by their centres. Keep them apart.</td></tr>
 <tr><td>A title lands in the middle of the scene</td><td><code>s.add(title(..))</code> goes top-centre only when you give no <code>.at(..)</code>.</td></tr>
+<tr><td>Lines and text vanish on a dark page</td><td>You set only <code>.background(..)</code>, which leaves the default dark ink. Use <code>.theme("dark")</code>, see <a href="#themes">Themes</a>.</td></tr>
+<tr><td>panic <code>unknown theme "..."</code></td><td>Not a built-in theme. Use one of <code>light</code>, <code>dark</code>, <code>chalkboard</code>, <code>blueprint</code>, <code>sepia</code>, <code>terminal</code>, or pass a <code>Theme</code>.</td></tr>
+<tr><td>The parts of a thing collapse into one pile</td><td>You called <code>move_to</code> on each part. Put the parts in a <a href="#groups">Group</a> and move that, or use <code>move_by</code>.</td></tr>
 <tr><td>A render is slow</td><td>Use <code>--release</code>.</td></tr>
 </table>
 
@@ -410,6 +514,8 @@ $S/frame.sh target/out.mp4 -0.5 target/end.png              # a negative time co
 <li>A <code>Stage</code> plays once, so build a fresh one for each video.</li>
 <li>LaTeX goes through <code>pdflatex</code> and a PDF to SVG converter. There is no <code>dvisvgm</code> route yet.</li>
 <li>Text uses plain glyph advances, with no kerning.</li>
+<li>Groups do not nest by themselves, scale uniformly only, have no absolute <code>rotate_to</code>, and upright text in a group moves but does not rotate.</li>
+<li>A theme changes only the defaults. Named palette colours such as <code>"mint"</code> look the same in every theme.</li>
 </ul>
 
 <h3 id="how-it-works">How it works, briefly</h3>

@@ -33,7 +33,7 @@ on `p`** instead. Rotations are radians: `deg(90)`.
 
 Builders: `.at(p)` `.base_at(p)` `.fill(c)` `.stroke(c)` `.color(c)` (fill+stroke) `.opacity(0..1)`
 `.stroke_width(w)` `.rotated(r)` `.scaled(s)` `.layer(n)` `.hidden()`, flat shapes: `.shift(dx,dy)` `.on(plane)`,
-text: `.font_size(n)` `.tracking(em)` (letter spacing, default 0.06) `.animate()` `.handwritten()` (see below). Colours: `"purple"` `"mint"` `"amber"` `"sky"` `"rose"` `"gold"` `"slate"` `"ink"` `"indigo"` `"stone"`
+text: `.font_size(n)` `.tracking(em)` (letter spacing, default 0.06) `.animate()` `.steady()` `.handwritten()` (see below). Colours: `"purple"` `"mint"` `"amber"` `"sky"` `"rose"` `"gold"` `"slate"` `"ink"` `"indigo"` `"stone"`
 `"red"` `"green"` `"blue"` `"orange"` `"yellow"` `"pink"` `"teal"` `"brown"` `"gray"` `"black"` `"white"`,
 `"#a882ff"`, or `(r, g, b)`. A wrong name panics and lists the valid ones.
 
@@ -55,6 +55,24 @@ widths and text) `.wobble(fps)` (boiling lines) `.sketch(Sketch::clean())`. `s.a
 `s.wait(secs)`, `s.render(path)`. **`s.pixel(x, y)`** is the floor point under a screen pixel, so
 `text("Title").at(s.pixel(640, 80))` puts text exactly there (call it after `origin`/`zoom`).
 
+## Themes
+`Stage::new(w, h).theme("dark")` sets the page colour and the default colours of lines, text, titles and captions
+together. Built in: `"light"` (the default) `"dark"` `"chalkboard"` `"blueprint"` `"sepia"` `"terminal"`. Some bring
+their own strokes (blueprint and terminal are drawn straight, chalkboard rougher); a later `.sketch(..)` overrides that.
+Make your own with `Theme::custom("#06283d", "#e0f2ff").title("#7dd3fc")` (page, then ink; also `.caption(c)` `.ink(c)`
+`.background(c)` `.sketch(s)`) and pass it to `.theme(..)`. Anything you colour yourself (`.fill`, `.stroke`, `.color`)
+is left alone, and the theme reaches objects added before it too.
+
+## Groups
+Several parts that move together (a rover, a character): `let mut car = Group::new();` then
+`s.add_to(&mut car, cuboid(..))` for each part (it returns the part's id, so you can still animate one part alone).
+Animate the whole thing as one: `car.move_by((x,y,z))`, `car.move_to(p)` (the bottom centre of its bounding box goes
+to `p`, like `base_at`), `car.rotate_by((0, deg(90), 0))` (turns it like one object around that point, wheels and tilted
+parts included; `car.pivot(p)` picks another point), `car.scale_by(2)`. `car.create()` / `car.write()` build the parts up
+one after another (3 s at most); `car.fade_in()` `car.fade_out()` `car.opacity_to(a)` `car.uncreate()` act on all at once.
+Each returns an `Anim`, so `.duration()` `.ease()` `.delay()` and `all([..])` work. `s.place(&car, p)` moves it
+instantly, and a group works with `create_all(&car)` and `clear(&car)`.
+
 ## Layout
 `s.put(obj, x, y)` adds `obj` standing on screen pixel `(x, y)` (text and flat shapes are centred there):
 `s.put(title("Hello"), 640, 80)`, `s.put(label("note"), 200, 600)`. Defaults: `label` is size 32 stone-gray and
@@ -62,12 +80,15 @@ steady, `title` is size 72 indigo and `.animate()`d; override with the usual bui
 `title` or `label` hides the function of that name for the rest of its scope, so call the second one something else.)
 `s.tag(id, "compute", Side::Above)` puts a label beside an object (`Above` `Below` `Left` `Right`), spaced to
 fit the text; pass a styled `label("x").color("rose")` instead of a string to choose its look.
-`s.heading("Title", "caption")` adds a header and caption near the top, sized to the canvas, and returns their ids
+`s.heading("Title", "caption")` adds a header and caption near the top, sized to the canvas (the title only wobbles
+on canvases big enough for it), and returns their ids
 (`""` for no caption). A `title(..)` or `label(..)` added with plain `s.add(..)` and no `.at(..)` goes to the same
 spots: top centre, and just under it.
 `s.screen(point)` is the pixel a world point lands on; `obj.dimensions()` is a text object's size in pixels.
 
 ## Gotchas
+- For a dark page use a theme. Setting only `.background("#101018")` leaves lines and text dark, so they vanish.
+- To move several things together use a `Group`. Calling `move_to` on each part would stack them all on one point.
 - `create`/`write`/`fade_in` hide their object until they start, so just `add` it (likewise the target of
   `transform_into`). Other animations don't.
 - A `Stage` plays **once**: build a fresh one per video. A `.png` (last frame) can follow a video from the same

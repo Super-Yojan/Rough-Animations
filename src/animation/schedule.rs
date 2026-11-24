@@ -19,12 +19,12 @@ struct Item {
 /// Animations placed at start offsets on a shared clock. [`seq`](super::seq), [`all`](super::all) and
 /// [`lag`](super::lag) are all just groups with different offsets.
 #[derive(Default)]
-pub struct Group {
+pub struct Schedule {
     items: Vec<Item>,
     duration: f32,
 }
 
-impl Group {
+impl Schedule {
     pub fn new() -> Self {
         Self::default()
     }
@@ -45,7 +45,7 @@ impl Group {
     }
 }
 
-impl Animation for Group {
+impl Animation for Schedule {
     fn duration(&self) -> f32 {
         self.duration
     }

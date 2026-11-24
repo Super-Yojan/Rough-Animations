@@ -1,8 +1,8 @@
-use crate::api::{IntoColor, Num, Pos};
+use crate::api::{IntoColor, Num, Pos, Theme};
 use crate::planar::Region;
 use crate::primitives::{Geometry, Plane};
 use crate::world::bounds::Aabb;
-use crate::world::style::Style;
+use crate::world::style::{Role, Style, ink};
 use crate::world::transform::Transform;
 use roughr::core::FillStyle;
 
@@ -17,6 +17,10 @@ pub(crate) enum Home {
 
 /// A thing in the scene: a geometry plus the properties animations will drive.
 pub struct Object {
+    /// Which theme colour the lines use, until a stroke colour is chosen.
+    pub(crate) stroke_role: Option<Role>,
+    /// Which theme colour the fill (text) uses, until a fill colour is chosen.
+    pub(crate) fill_role: Option<Role>,
     /// Cleared as soon as the object is given a position (`at`, `base_at`, `put`).
     pub(crate) home: Option<Home>,
     pub transform: Transform,
@@ -29,10 +33,14 @@ pub struct Object {
 
 impl Object {
     pub fn new(geometry: impl Geometry + 'static) -> Self {
+        let style = geometry.default_style();
         Self {
+            // Lines and text start out in the theme's ink, whatever the theme turns out to be.
+            stroke_role: (style.stroke == ink()).then_some(Role::Ink),
+            fill_role: (style.fill == Some(ink())).then_some(Role::Ink),
             home: None,
             transform: Transform::IDENTITY,
-            style: geometry.default_style(),
+            style,
             visible: true,
             layer: geometry.layer(),
             geometry: Box::new(geometry),
@@ -71,6 +79,7 @@ impl Object {
     /// Fill colour: a name (`"purple"`), hex (`"#a882ff"`) or `(r, g, b)`.
     pub fn fill(mut self, color: impl IntoColor) -> Self {
         self.style.fill = Some(color.into_color());
+        self.fill_role = None;
         self
     }
 
@@ -79,11 +88,14 @@ impl Object {
         let c = color.into_color();
         self.style.fill = Some(c);
         self.style.stroke = c;
+        self.fill_role = None;
+        self.stroke_role = None;
         self
     }
 
     pub fn stroke(mut self, color: impl IntoColor) -> Self {
         self.style.stroke = color.into_color();
+        self.stroke_role = None;
         self
     }
 
@@ -151,6 +163,13 @@ impl Object {
         self
     }
 
+    /// The opposite of [`animate`](Self::animate): crisp and steady text. This is already how
+    /// plain text behaves; use it to calm a `title(..)` that is too small to wobble legibly.
+    pub fn steady(mut self) -> Self {
+        self.geometry.set_lively(false);
+        self
+    }
+
     /// Fill with flat colour (the default for text).
     pub fn solid(mut self) -> Self {
         self.style.fill_style = Some(FillStyle::Solid);
@@ -210,6 +229,27 @@ impl Object {
             .expect("boolean operations need flat shapes (circle, rect, text, ...)");
         *a = op(a, b);
         self
+    }
+
+    /// Colour fill and stroke from a theme role (the default look of titles and captions). A
+    /// colour chosen afterwards with `.fill`, `.stroke` or `.color` takes over.
+    pub(crate) fn role(mut self, role: Role) -> Self {
+        let c = Theme::light().color(role);
+        self.style.fill = Some(c);
+        self.style.stroke = c;
+        self.fill_role = Some(role);
+        self.stroke_role = Some(role);
+        self
+    }
+
+    /// Recolour whatever still uses a theme colour; explicit colours are left alone.
+    pub(crate) fn apply_theme(&mut self, theme: &Theme) {
+        if let Some(role) = self.stroke_role {
+            self.style.stroke = theme.color(role);
+        }
+        if let Some(role) = self.fill_role {
+            self.style.fill = Some(theme.color(role));
+        }
     }
 
     /// Give the object a default home that `Stage::add` uses unless it is positioned first.

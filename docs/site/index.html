@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Rough-Animations: hand-drawn 3D and 2D animation in Rust</title>
-<meta name="description" content="Script a Stage in a few lines of Rust and render a whiteboard-style mp4, gif or png. Isometric solids, boolean shapes, morphing, handwritten LaTeX.">
+<meta name="description" content="Script a Stage in a few lines of Rust and render a whiteboard-style mp4, gif or png. Isometric solids, boolean shapes, morphing, groups, themes and handwritten LaTeX.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
   <a class="l" href="#gallery">Gallery</a>
   <a class="l" href="docs.html">Docs</a>
   <span class="sp"></span>
-  <a class="l" href="https://github.com/Super-Yojan/rough-animations">GitHub</a>
+  <a class="l" href="https://github.com/Super-Yojan/Rough-Animations">GitHub</a>
   <a class="btn primary" href="docs.html#quick-start">Get started</a>
 </div></header>
 
@@ -24,12 +24,12 @@
 <section class="hero">
   <span class="eyebrow">for Rust · inspired by manim and rough.js</span>
   <h1>Animations that look <u>sketched</u> on a whiteboard.</h1>
-  <p class="lead">Write a short script, get an mp4, gif or png. Isometric solids, flat shapes with boolean operations, morphing and handwritten LaTeX, all behind a small API that fits on one page.</p>
+  <p class="lead">Write a short script, get an mp4, gif or png. Isometric solids, flat shapes with boolean operations, morphing, groups, themes and handwritten LaTeX, all behind a small API that fits on one page.</p>
   <div class="cta">
     <a class="btn primary" href="docs.html#quick-start">Read the quick start →</a>
     <a class="btn ghost" href="docs.html#cheat-sheet">API cheat sheet</a>
   </div>
-  <div class="install" data-copy='rough-animations = { git = "https://github.com/Super-Yojan/rough-animations" }'><b>Cargo.toml</b> rough-animations = { git = "…/Super-Yojan/rough-animations" } ⧉</div>
+  <div class="install" data-copy='rough-animations = { git = "https://github.com/Super-Yojan/Rough-Animations" }'><b>Cargo.toml</b> rough-animations = { git = "…/Super-Yojan/Rough-Animations" } ⧉</div>
 </section>
 
 <div class="stage">
@@ -72,8 +72,14 @@ sphere(36).fill("sky")</div></div>
   .handwritten()</div></div>
     <div class="feat"><div class="ic" style="background:var(--sky,#82c3ff)">◎</div><h3>Composable motion</h3><p>Animations are values. Tweak them with <code>.duration()</code> and <code>.ease()</code>, group them with <code>all</code>, <code>seq</code> and <code>lag</code>.</p><div class="mini">lag(0.3, [move_by(a, d),
           move_by(b, d)])</div></div>
-    <div class="feat"><div class="ic" style="background:var(--gold,#fad75a)">✎</div><h3>Agent friendly</h3><p>Scenes are a handful of lines, and the repo ships a Claude Code skill that teaches the draw-a-still-first workflow.</p><div class="mini">cp -r .claude/skills/\
-  rough-animations ~/.claude/skills/</div></div>
+    <div class="feat"><div class="ic" style="background:#9be0d6">◫</div><h3>Groups</h3><p>Build a rover or a character from parts, then move, turn, scale and fade it as one. Each part stays an ordinary object.</p><div class="mini">rover.move_by((170, 0, 0))
+rover.rotate_by((0, deg(90), 0))</div></div>
+    <div class="feat"><div class="ic" style="background:#c9c3ff">◐</div><h3>Themes</h3><p>Six built in: light, dark, chalkboard, blueprint, sepia and terminal. One call changes the page and every default colour.</p><div class="mini">Stage::new(900, 600)
+  .theme("chalkboard")</div></div>
+    <div class="feat"><div class="ic" style="background:#ffd2a8">⌖</div><h3>Layout in pixels</h3><p>Place titles and labels by screen pixel, tag objects and add a heading, with no world-coordinate arithmetic.</p><div class="mini">s.put(title("Hello"), 640, 80)
+s.tag(id, "hub", Side::Above)</div></div>
+    <div class="feat"><div class="ic" style="background:var(--gold,#fad75a)">✎</div><h3>Agent friendly</h3><p>Scenes are a handful of lines, and the repo ships a skill that teaches the draw-a-still-first workflow. Install it with one command.</p><div class="mini">/plugin install rough-animations \
+  --marketplace Super-Yojan/rough-animations</div></div>
   </div>
 </section>
 
@@ -94,7 +100,7 @@ s.play(morph(a, star(5, 70, 30)));</code></pre></div>
   <div class="sh"><h2>See the code behind it</h2><p>Each tab is a complete program you can paste into <code>src/main.rs</code>.</p></div>
   <div class="tabs">
     <div class="tab-row">
-      <button aria-selected="true">Shapes</button><button aria-selected="false">Animation</button><button aria-selected="false">Text &amp; LaTeX</button><button aria-selected="false">The look</button>
+      <button aria-selected="true">Shapes</button><button aria-selected="false">Animation</button><button aria-selected="false">Groups</button><button aria-selected="false">Text &amp; LaTeX</button><button aria-selected="false">Themes</button>
     </div>
     <div class="tab-pane on">
       <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>shapes.rs</span><button>copy</button></div>
@@ -128,6 +134,24 @@ fn main() -> Result {
       <div class="preview"><div class="cap">occlusion.png · nearer objects hide those behind</div><img src="occlusion.png" alt="Objects hide each other" loading="lazy"></div>
     </div>
     <div class="tab-pane">
+      <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>rover.rs</span><button>copy</button></div>
+<pre><code>use rough_animations::prelude::*;
+
+fn main() -&gt; Result {
+    let mut s = Stage::new(900, 600);
+    let mut rover = Group::new();
+    s.add_to(&amp;mut rover, cuboid(120, 30, 70).base_at((0, 10, 0)).fill("white"));
+    s.add_to(&amp;mut rover, cylinder(14, 10).at((40, 14, 40)).rotated((deg(90), 0, 0)).fill("ink"));
+    s.add_to(&amp;mut rover, cylinder(14, 10).at((-40, 14, 40)).rotated((deg(90), 0, 0)).fill("ink"));
+
+    s.play(rover.create());                          // the parts build up one after another
+    s.play(rover.move_by((80, 0, 0)).duration(2));   // the whole rover drives
+    s.play(rover.rotate_by((0, deg(90), 0)));        // and turns on the spot, wheels included
+    s.render("rover.mp4")
+}</code></pre></div>
+      <div class="preview"><div class="cap">rover.png · a Group that drives and turns as one</div><img src="rover.png" alt="A rover built as a group" loading="lazy"></div>
+    </div>
+    <div class="tab-pane">
       <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>hello.rs</span><button>copy</button></div>
 <pre><code>use rough_animations::prelude::*;
 
@@ -142,20 +166,19 @@ fn main() -> Result {
       <div class="preview"><div class="cap">text.png</div><img src="text.png" alt="Text and LaTeX" loading="lazy"></div>
     </div>
     <div class="tab-pane">
-      <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>look.rs</span><button>copy</button></div>
+      <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>themes.rs</span><button>copy</button></div>
 <pre><code>use rough_animations::prelude::*;
 
-fn main() -> Result {
-    // Straight lines, a dark page, and strokes redrawn 8x a second.
-    let mut s = Stage::new(900, 600)
-        .sketch(Sketch::clean())
-        .background("#101018")
-        .wobble(8);
+fn main() -&gt; Result {
+    // One word changes the page and every default colour: "dark", "chalkboard",
+    // "blueprint", "sepia", "terminal" or "light".
+    let mut s = Stage::new(900, 600).theme("chalkboard").wobble(8);
+    s.heading("Chalkboard", "the same script works in any theme");
     let c = s.add(cube(80).base_at((0, 0, 0)).fill("mint"));
     s.play(create(c));
-    s.render("look.mp4")
+    s.render("chalk.mp4")
 }</code></pre></div>
-      <div class="preview"><div class="cap">handwritten.png · typeset (left) vs <code>.handwritten()</code> (right)</div><img src="handwritten.png" alt="Typeset and handwritten formulas" loading="lazy"></div>
+      <div class="preview"><div class="cap">themes.png · the same scene in each built-in theme</div><img src="themes.png" alt="The same scene in six themes" loading="lazy"></div>
     </div>
   </div>
 </section>
@@ -167,6 +190,8 @@ fn main() -> Result {
     <figure><img src="booleans.png" alt="" loading="lazy"><figcaption>union, intersect, minus, xor · examples/shapes.rs</figcaption></figure>
     <figure><img src="occlusion.png" alt="" loading="lazy"><figcaption>Stacking and hidden lines · examples/occlusion.rs</figcaption></figure>
     <figure><img src="text.png" alt="" loading="lazy"><figcaption>Labels, floor text and LaTeX · examples/text.rs</figcaption></figure>
+    <figure><img src="themes.png" alt="" loading="lazy"><figcaption>The same scene in every theme · examples/themes.rs</figcaption></figure>
+    <figure><img src="rover.png" alt="" loading="lazy"><figcaption>A rover built as a Group · examples/rover.rs</figcaption></figure>
   </div>
 </section>
 
@@ -174,11 +199,15 @@ fn main() -> Result {
   <div class="agent">
     <div>
       <h2>Built to be driven by an AI agent</h2>
-      <p>You cannot watch a video, but you can sample one. The bundled skill teaches the loop: write a short script, draw a still first, then check the motion from a contact sheet of frames.</p>
+      <p>You cannot watch a video, but you can sample one. The bundled skill teaches the loop: write a short script, draw a still first, then check the motion from a contact sheet of frames. Install it from the plugin marketplace, or with a one-line script that works for any agent.</p>
       <a class="btn" href="docs.html#agents">Using it with agents →</a>
     </div>
     <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span></div>
-<pre><code data-lang="sh">S=.claude/skills/rough-animations/scripts
+<pre><code data-lang="sh"># install the skill (Claude Code)
+/plugin install rough-animations --marketplace Super-Yojan/rough-animations
+
+# then look at what you made
+S=~/.claude/skills/rough-animations/scripts   # wherever the skill lives
 $S/contact-sheet.sh target/out.mp4 1.5 4 target/sheet.png
 $S/frame.sh target/out.mp4 -0.5 target/end.png</code></pre></div>
   </div>

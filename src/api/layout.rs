@@ -17,6 +17,9 @@ pub enum Side {
 
 /// Space between a tagged object and its tag, in pixels.
 const TAG_GAP: f32 = 14.0;
+/// A heading's title only gets the lively hand-drawn wobble at or above this size (in pixels); it
+/// is hard to read when small.
+const LIVELY_TITLE_MIN: f32 = 48.0;
 /// Text size of a tag that is given as a plain string.
 const TAG_SIZE: u32 = 28;
 
@@ -89,13 +92,18 @@ impl Stage {
     }
 
     /// A section header and a one-line caption centred near the top of the canvas, sized to
-    /// it: `s.heading("Boolean operations", "combine any flat shapes")`. Returns the ids, header
+    /// it (the header gets the lively wobble only on canvases big enough for it): `s.heading("Boolean operations", "combine any flat shapes")`. Returns the ids, header
     /// first, ready for `write_all` and `clear`. Pass `""` as the caption for a header alone
     /// (then there is just one id).
     pub fn heading(&mut self, header: &str, caption: &str) -> Vec<Id> {
         let h = self.height as f32;
         let (title_at, caption_at) = (self.home_pixel(Home::Title), self.home_pixel(Home::Caption));
-        let mut ids = vec![self.put(title(header).font_size(h / 12.0), title_at.0, title_at.1)];
+        let size = h / 12.0;
+        let mut head = title(header).font_size(size);
+        if size < LIVELY_TITLE_MIN {
+            head = head.steady(); // too small to wobble legibly
+        }
+        let mut ids = vec![self.put(head, title_at.0, title_at.1)];
         if !caption.is_empty() {
             ids.push(self.put(label(caption).font_size(h * 0.044), caption_at.0, caption_at.1));
         }
@@ -211,13 +219,16 @@ mod tests {
     }
 
     #[test]
-    fn heading_is_a_lively_title_over_a_steady_caption_sized_to_the_canvas() {
+    fn heading_is_a_title_over_a_steady_caption_sized_to_the_canvas() {
         for (w, h) in [(1280, 720), (640, 360), (1920, 1080)] {
             let mut s = Stage::new(w, h);
             let ids = s.heading("Hello", "world");
             assert_eq!(ids.len(), 2);
             let (head, cap) = (s.scene.get(ids[0]).unwrap(), s.scene.get(ids[1]).unwrap());
-            assert!(head.geometry.wobbles() && !cap.geometry.wobbles());
+            // The title wobbles only when it is big enough to stay readable; the caption never does.
+            let lively = h as f32 / 12.0 >= LIVELY_TITLE_MIN;
+            assert_eq!(head.geometry.wobbles(), lively, "{w}x{h}");
+            assert!(!cap.geometry.wobbles());
             // Centred, near the top, caption below the title.
             let (hx, hy) = s.screen(head.transform.position);
             let (cx, cy) = s.screen(cap.transform.position);

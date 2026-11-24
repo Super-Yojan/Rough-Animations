@@ -91,6 +91,10 @@ impl<T> Arena<T> {
         self.len() == 0
     }
 
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
+        self.slots.iter_mut().filter_map(|s| s.value.as_mut())
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = (Id, &T)> {
         self.slots.iter().enumerate().filter_map(|(i, s)| {
             s.value.as_ref().map(|v| {

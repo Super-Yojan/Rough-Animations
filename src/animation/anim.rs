@@ -1,4 +1,4 @@
-use super::{Animation, Easing, Group, create, uncreate, write};
+use super::{Animation, Easing, Schedule, create, uncreate, write};
 use crate::api::Num;
 use crate::world::arena::Id;
 use crate::world::scene::Scene;
@@ -93,7 +93,7 @@ impl Animation for Anim {
 
 /// Run all at once; lasts as long as the longest.
 pub fn all(anims: impl IntoIterator<Item = Anim>) -> Anim {
-    let mut g = Group::new();
+    let mut g = Schedule::new();
     for a in anims {
         g.push_at(0.0, a);
     }
@@ -102,7 +102,7 @@ pub fn all(anims: impl IntoIterator<Item = Anim>) -> Anim {
 
 /// Run one after another.
 pub fn seq(anims: impl IntoIterator<Item = Anim>) -> Anim {
-    let mut g = Group::new();
+    let mut g = Schedule::new();
     let mut t = 0.0;
     for a in anims {
         let d = Animation::duration(&a);
@@ -115,7 +115,7 @@ pub fn seq(anims: impl IntoIterator<Item = Anim>) -> Anim {
 /// Start each one `gap` seconds after the previous; they overlap.
 pub fn lag(gap: impl Num, anims: impl IntoIterator<Item = Anim>) -> Anim {
     let gap = gap.f32().max(0.0);
-    let mut g = Group::new();
+    let mut g = Schedule::new();
     for (i, a) in anims.into_iter().enumerate() {
         g.push_at(gap * i as f32, a);
     }

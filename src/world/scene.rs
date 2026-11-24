@@ -104,6 +104,11 @@ impl Scene {
         }
     }
 
+    /// The rough-drawing options (roughness, hatching, ...) in force.
+    pub fn options(&self) -> &Options {
+        &self.base_opts
+    }
+
     /// Replace the rough-drawing options (roughness, hatching, ...).
     pub fn set_options(&mut self, options: Options) {
         self.base_opts = options;
@@ -132,6 +137,11 @@ impl Scene {
 
     pub fn get_mut(&mut self, id: Id) -> Option<&mut Object> {
         self.objects.get_mut(id)
+    }
+
+    /// Every object, for changing them all at once (e.g. applying a theme).
+    pub fn objects_mut(&mut self) -> impl Iterator<Item = &mut Object> {
+        self.objects.iter_mut()
     }
 
     pub fn len(&self) -> usize {

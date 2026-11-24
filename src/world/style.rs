@@ -7,6 +7,22 @@ pub fn rgb(r: u8, g: u8, b: u8) -> Color {
     Color::from_rgba8(r, g, b, 255)
 }
 
+/// The default colour of lines and text. Themes replace it.
+pub fn ink() -> Color {
+    rgb(35, 35, 40)
+}
+
+/// Which theme colour an object's lines or text use until a colour is chosen for it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Role {
+    /// Lines and body text.
+    Ink,
+    /// Big titles.
+    Title,
+    /// Captions and labels.
+    Caption,
+}
+
 /// Visual properties of an object. All of these are meant to be animatable.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Style {
@@ -26,7 +42,7 @@ pub struct Style {
 impl Default for Style {
     fn default() -> Self {
         Self {
-            stroke: rgb(35, 35, 40),
+            stroke: ink(),
             stroke_width: 1.6,
             fill: None,
             opacity: 1.0,

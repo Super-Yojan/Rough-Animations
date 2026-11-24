@@ -5,7 +5,7 @@ Write a short script, get an mp4, gif or png that looks like it was sketched on 
 
 ![An isometric scene being sketched into place](docs/media/hero.gif)
 
-📖 **[Documentation site](https://super-yojan.github.io/rough-animations/)**
+📖 **[Documentation site](https://super-yojan.github.io/Rough-Animations/)**
 
 ▶ **[Watch the one-minute intro](docs/media/intro.mp4)**, which was made with the library itself
 (`cargo run --release --example intro`).
@@ -111,6 +111,53 @@ fn main() -> Result {
 
 `create`, `write` and `fade_in` hide their object until they start, so you never hide it yourself.
 
+### Groups
+
+A thing made of several parts (a rover, a character) is a `Group`. Add the parts, then move, turn and fade it as
+one:
+
+```rust,no_run
+use rough_animations::prelude::*;
+
+fn main() -> Result {
+    let mut s = Stage::new(900, 600);
+    let mut rover = Group::new();
+    s.add_to(&mut rover, cuboid(120, 30, 70).base_at((0, 10, 0)).fill("white"));
+    s.add_to(&mut rover, cylinder(14, 10).at((40, 14, 40)).rotated((deg(90), 0, 0)).fill("ink"));
+    s.add_to(&mut rover, cylinder(14, 10).at((-40, 14, 40)).rotated((deg(90), 0, 0)).fill("ink"));
+
+    s.play(rover.create());                              // the parts build up one after another
+    s.play(rover.move_by((80, 0, 0)).duration(2));       // the whole rover drives
+    s.play(rover.rotate_by((0, deg(90), 0)));            // and turns on the spot, wheels included
+    s.render("rover.mp4")
+}
+```
+
+`move_to`, `scale_by`, `fade_in`, `fade_out` and the rest work the same way, and each part is still an ordinary
+object you can animate on its own ([`rover.rs`](examples/rover.rs) is a fuller example).
+
+### Themes
+
+One call changes the page and the default colours of lines, text, titles and captions together. There are six
+built in (`light`, `dark`, `chalkboard`, `blueprint`, `sepia`, `terminal`), and the same script looks right in
+all of them:
+
+![The same scene in each built-in theme](docs/media/themes.png)
+
+```rust,no_run
+use rough_animations::prelude::*;
+
+fn main() -> Result {
+    let mut s = Stage::new(900, 600).theme("chalkboard");
+    s.heading("Chalkboard", "the same script works in any theme");
+    s.add(cube(80).base_at((0, 0, 0)).fill("mint"));
+    s.render("chalk.png")
+}
+```
+
+Colours you choose yourself are never touched. Make your own with `Theme::custom("#06283d", "#e0f2ff")`, adding
+`.title(..)`, `.caption(..)` and `.sketch(..)` as you like ([`themes.rs`](examples/themes.rs) renders the picture above).
+
 ### Text, LaTeX and layout
 
 Text is upright on screen by default and can also lie in a plane of the scene. It is drawn crisp and steady so
@@ -133,8 +180,9 @@ fn main() -> Result {
 
 ### The look
 
-`Stage::new(..).sketch(Sketch::clean())` gives straight lines, `.wobble(8)` redraws the strokes eight times a
-second for a "boiling line" cartoon feel, and `.background("#101018")` changes the page.
+`Stage::new(..).sketch(Sketch::clean())` gives straight lines and `.wobble(8)` redraws the strokes eight times a
+second for a "boiling line" cartoon feel. `.theme("dark")` changes the page and the default colours together;
+`.background(..)` on its own changes only the page, so on a dark page use a theme or the dark ink will vanish.
 
 ![The same formulas typeset (left) and made handwritten (right)](docs/media/handwritten.png)
 
@@ -158,6 +206,8 @@ Run any of them with `cargo run --release --example <name>`:
 | `morph` | `target/morph.mp4`, shapes and solids morphing |
 | `text` | `target/text.mp4` and `.png`, labels and a formula |
 | `avatar` | `target/avatar.mp4` and `.png`, a blocky 3D avatar that draws itself, blinks and smiles |
+| `rover` | `target/rover.mp4` and `.png`, a rover built as a `Group` that drives and turns |
+| `themes` | `target/themes.png`, the same scene in all six built-in themes |
 | `handwritten` | `target/handwritten.png`, typeset and handwritten formulas side by side |
 | `occlusion` | `target/occlusion.png`, stacking and overlap |
 | `intro` | `docs/media/intro.mp4`, the intro video |
