@@ -1,7 +1,8 @@
-use super::{Animation, Easing, Group};
+use super::{Animation, Easing, Group, create, uncreate, write};
 use crate::api::Num;
 use crate::world::arena::Id;
 use crate::world::scene::Scene;
+use std::borrow::Borrow;
 
 /// Any animation: every constructor (`move_to`, `create`, `all`, ...) returns one, so they can
 /// be put in arrays and combined without boxing.
@@ -121,6 +122,39 @@ pub fn lag(gap: impl Num, anims: impl IntoIterator<Item = Anim>) -> Anim {
     Anim::new(g)
 }
 
+/// Write each of `ids` in turn, 0.25 s apart (they overlap): `write_all(&labels)`.
+/// Accepts an array, a `Vec`, a slice or a reference to one.
+pub fn write_all<I>(ids: I) -> Anim
+where
+    I: IntoIterator,
+    I::Item: Borrow<Id>,
+{
+    lag(0.25, ids.into_iter().map(|id| write(*id.borrow())))
+}
+
+/// Draw each of `ids` pen-style in turn, 0.3 s apart (they overlap): `create_all(&solids)`.
+pub fn create_all<I>(ids: I) -> Anim
+where
+    I: IntoIterator,
+    I::Item: Borrow<Id>,
+{
+    lag(0.3, ids.into_iter().map(|id| create(*id.borrow())))
+}
+
+/// Erase all of `ids` together, pen-style, over 0.7 s: `clear(&scene_one)`. Use it to wipe a
+/// scene before the next one. Call `.duration(..)` on the result for a different speed.
+pub fn clear<I>(ids: I) -> Anim
+where
+    I: IntoIterator,
+    I::Item: Borrow<Id>,
+{
+    let erasing: Vec<Anim> = ids.into_iter().map(|id| uncreate(*id.borrow())).collect();
+    if erasing.is_empty() {
+        return all(erasing); // nothing to erase, so no pause either
+    }
+    all(erasing).duration(0.7)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -131,6 +165,40 @@ mod tests {
         let a = seq([wait(1), wait(1)]);
         assert_eq!(Animation::duration(&a), 2.0);
         assert_eq!(Animation::duration(&a.duration(5)), 5.0);
+    }
+
+    #[test]
+    fn the_all_helpers_take_any_collection_of_ids_and_have_sensible_timing() {
+        use crate::api::shapes::cube;
+        use crate::api::Stage;
+        let mut s = Stage::new(100, 100);
+        let ids: Vec<Id> = (0..4).map(|_| s.add(cube(5))).collect();
+        let arr = [ids[0], ids[1], ids[2], ids[3]];
+        // 4 items, each 1 s long, staggered: (4 - 1) * gap + 1.
+        for w in [write_all(&ids), write_all(&arr), write_all(ids.iter()), write_all(ids.clone())] {
+            assert!((Animation::duration(&w) - (3.0 * 0.25 + 1.0)).abs() < 1e-5);
+        }
+        assert!((Animation::duration(&create_all(&ids)) - (3.0 * 0.3 + 1.0)).abs() < 1e-5);
+        assert!((Animation::duration(&clear(&ids)) - 0.7).abs() < 1e-5);
+        assert!((Animation::duration(&clear(arr).duration(2)) - 2.0).abs() < 1e-5);
+        // Empty lists are fine.
+        let none: Vec<Id> = vec![];
+        assert_eq!(Animation::duration(&clear(&none)), 0.0);
+    }
+
+    #[test]
+    fn clear_really_erases_and_create_all_really_draws() {
+        use crate::api::shapes::cube;
+        use crate::api::Stage;
+        let mut s = Stage::new(100, 100);
+        let ids = [s.add(cube(5)), s.add(cube(5))];
+        s.play(create_all(ids));
+        s.play(clear(ids));
+        let end = s.duration();
+        s.seek(end);
+        for id in ids {
+            assert_eq!(s.scene.get(id).unwrap().style.reveal, 0.0, "erased");
+        }
     }
 
     #[test]

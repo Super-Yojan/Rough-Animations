@@ -116,6 +116,54 @@ impl SeekEnd for Stage {
 }
 
 #[test]
+fn the_layout_helpers_on_the_sheet_work_as_described() {
+    let mut s = Stage::new(1280, 720);
+    // put: text is centred on the pixel, solids stand on it.
+    let hello = s.put(title("Hello"), 640, 80);
+    let note = s.put(label("note"), 200, 600);
+    let tower = s.put(cuboid(60, 90, 60).fill("mint"), 900, 500);
+    let (x, y) = s.screen(s.scene.get(hello).unwrap().transform.position);
+    assert!((x - 640.0).abs() < 0.5 && (y - 80.0).abs() < 0.5);
+    assert!(s.scene.get(tower).unwrap().bounds().min.y.abs() < 1e-3);
+
+    // Defaults: label is steady, title is lively and bigger.
+    let (lw, lh) = s.scene.get(note).unwrap().dimensions().unwrap();
+    let (_, th) = s.scene.get(hello).unwrap().dimensions().unwrap();
+    assert!(lw > 0.0 && th > lh);
+
+    // tag: every side, with a string and with a styled label.
+    let tags = [
+        s.tag(tower, "above", Side::Above),
+        s.tag(tower, "below", Side::Below),
+        s.tag(tower, "left", Side::Left),
+        s.tag(tower, label("right").color("rose"), Side::Right),
+    ];
+    assert_eq!(tags.len(), 4);
+
+    // A title or label added with plain `add` and no position goes to its default spot.
+    let mut d = Stage::new(1280, 720);
+    let (t, l) = (d.add(title("Default")), d.add(label("under it")));
+    let spot = |d: &Stage, id: Id| d.screen(d.scene.get(id).unwrap().transform.position);
+    let ((tx, ty), (lx, ly)) = (spot(&d, t), spot(&d, l));
+    assert!((tx - 640.0).abs() < 0.5 && (lx - 640.0).abs() < 0.5, "centred");
+    assert!(ty < ly && ty < 720.0 * 0.2, "title at the top, label under it");
+
+    // heading returns the header and the caption (just the header for an empty caption).
+    assert_eq!(s.heading("Solo", "").len(), 1);
+    let head = s.heading("Title", "caption");
+    assert_eq!(head.len(), 2);
+
+    // The id-list helpers take arrays, Vecs and references.
+    s.play(write_all(&head));
+    s.play(create_all([tower]));
+    s.play(write_all(tags));
+    s.play(clear(&head));
+    s.play(clear(vec![tower, note]));
+    let end = s.duration();
+    s.seek(end);
+}
+
+#[test]
 fn the_stage_builders_named_on_the_sheet_exist() {
     let s = Stage::new(900, 600)
         .fps(24)
@@ -152,16 +200,21 @@ fn the_quick_start_runs_end_to_end_to_a_png() {
 
 #[test]
 fn colour_names_on_the_sheet_match_the_library() {
-    let listed: Vec<&str> = SHEET
+    // Only the paragraph that lists the colours: it starts at "Colours:" and ends at a blank line.
+    let start = SHEET.find("Colours:").expect("the sheet lists colours");
+    let paragraph = &SHEET[start..SHEET[start..].find("\n\n").map_or(SHEET.len(), |n| start + n)];
+    let listed: Vec<&str> = paragraph
         .split('"')
         .skip(1)
         .step_by(2)
-        .filter(|w| w.chars().all(|c| c.is_ascii_lowercase()))
+        .filter(|w| !w.starts_with('#') && w.chars().all(|c| c.is_ascii_lowercase()))
         .collect();
+    assert!(listed.len() >= 10, "found only {listed:?}");
     for name in &listed {
-        if rough_animations::api::color::parse_color(name).is_none() && !is_non_colour(name) {
-            panic!("the sheet lists {name:?} as a colour but it doesn't parse");
-        }
+        assert!(
+            rough_animations::api::color::parse_color(name).is_some(),
+            "the sheet lists {name:?} as a colour but it doesn't parse"
+        );
     }
     // And the other way round: every real colour name is on the sheet (grey is an alias).
     for (name, _) in rough_animations::api::color::NAMES {
@@ -169,11 +222,6 @@ fn colour_names_on_the_sheet_match_the_library() {
             assert!(listed.contains(name), "colour {name:?} is missing from the sheet");
         }
     }
-}
-
-/// Quoted lowercase words on the sheet that are not colours (strings in example code).
-fn is_non_colour(w: &str) -> bool {
-    ["compute", "out", "hi", "sheet"].contains(&w)
 }
 
 #[test]

@@ -9,7 +9,7 @@ use crate::planar::Region;
 use crate::primitives::{
     Arrow3D, Box3D, Cone, Cylinder, Line3D, Prism, Shape2D, Sphere, Tex, Text,
 };
-use crate::world::object::Object;
+use crate::world::object::{Home, Object};
 
 /// Box with the given width (x), height (y, up) and depth (z).
 pub fn cuboid(width: impl Num, height: impl Num, depth: impl Num) -> Object {
@@ -99,6 +99,22 @@ pub fn text(content: &str) -> Object {
     Object::new(Text::new(content))
 }
 
+/// A caption or label: [`text`] with a readable default look (size 32, a soft gray). Change
+/// either with the usual builders: `label("note").font_size(40).color("rose")`.
+///
+/// Added with no position, it goes just under the title spot (top centre of the canvas).
+pub fn label(content: &str) -> Object {
+    text(content).font_size(32).color("stone").homed(Home::Caption)
+}
+
+/// A big title: size 72, deep indigo, and `.animate()` for the lively hand-drawn wobble, which
+/// suits large text. `title("Hello").font_size(110)` for a bigger one.
+///
+/// Added with no position, it goes at the top centre of the canvas: `s.add(title("Hello"))`.
+pub fn title(content: &str) -> Object {
+    text(content).font_size(72).color("indigo").animate().homed(Home::Title)
+}
+
 /// A LaTeX formula in math mode, e.g. `math(r"\int_0^1 x^2\,dx = \frac13")?`. Needs
 /// `pdflatex` and `pdftocairo` or `mutool`.
 pub fn math(source: &str) -> Result<Object> {
@@ -113,6 +129,7 @@ pub fn latex(source: &str) -> Result<Object> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::api::IntoColor;
     use crate::primitives::Plane;
 
     #[test]
@@ -187,6 +204,30 @@ mod tests {
     fn polygon_takes_any_number_type() {
         let p = polygon([(0, 0), (10, 0), (5, 8)]);
         assert!((p.geometry.region().unwrap().area() - 40.0).abs() < 1e-3);
+    }
+
+    #[test]
+    fn label_and_title_have_readable_defaults() {
+        let l = label("note");
+        assert_eq!(l.style.fill, "stone".into_color().into());
+        assert!(!l.geometry.wobbles(), "labels stay steady");
+        let t = title("Big");
+        assert_eq!(t.style.fill, "indigo".into_color().into());
+        assert!(t.geometry.wobbles(), "titles are lively");
+        // A title is bigger than a label, and both can be adjusted.
+        assert!(t.dimensions().unwrap().1 > label("Big").dimensions().unwrap().1 * 1.5);
+        let custom = label("note").font_size(64).color("rose");
+        assert!(custom.dimensions().unwrap().1 > l.dimensions().unwrap().1 * 1.5);
+        assert_eq!(custom.style.fill, "rose".into_color().into());
+    }
+
+    #[test]
+    fn dimensions_exist_for_text_only() {
+        let (w, h) = text("hello").font_size(30).dimensions().unwrap();
+        assert!(w > 50.0 && h > 10.0);
+        assert!(cube(10).dimensions().is_none());
+        // Wider with more letters.
+        assert!(text("hello hello").font_size(30).dimensions().unwrap().0 > w * 1.8);
     }
 
     #[test]

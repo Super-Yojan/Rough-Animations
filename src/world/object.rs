@@ -6,8 +6,19 @@ use crate::world::style::Style;
 use crate::world::transform::Transform;
 use roughr::core::FillStyle;
 
+/// Where `Stage::add` puts an object that was never given a position of its own.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Home {
+    /// Top centre of the canvas, where a title goes.
+    Title,
+    /// Just under the title, where a caption goes.
+    Caption,
+}
+
 /// A thing in the scene: a geometry plus the properties animations will drive.
 pub struct Object {
+    /// Cleared as soon as the object is given a position (`at`, `base_at`, `put`).
+    pub(crate) home: Option<Home>,
     pub transform: Transform,
     pub style: Style,
     pub visible: bool,
@@ -19,6 +30,7 @@ pub struct Object {
 impl Object {
     pub fn new(geometry: impl Geometry + 'static) -> Self {
         Self {
+            home: None,
             transform: Transform::IDENTITY,
             style: geometry.default_style(),
             visible: true,
@@ -30,6 +42,7 @@ impl Object {
     /// Place the object's centre at `position`.
     pub fn at(mut self, position: impl Pos) -> Self {
         self.transform.position = position.pos();
+        self.home = None;
         self
     }
 
@@ -37,6 +50,7 @@ impl Object {
     /// floor: `cuboid(80, 110, 80).base_at((50, 20, 50))`. Call after `rotated`/`scaled`.
     pub fn base_at(mut self, position: impl Pos) -> Self {
         let target = position.pos();
+        self.home = None;
         self.transform.position = target;
         let lowest = self.bounds().min.y;
         self.transform.position.y += target.y - lowest;
@@ -196,6 +210,18 @@ impl Object {
             .expect("boolean operations need flat shapes (circle, rect, text, ...)");
         *a = op(a, b);
         self
+    }
+
+    /// Give the object a default home that `Stage::add` uses unless it is positioned first.
+    pub(crate) fn homed(mut self, home: Home) -> Self {
+        self.home = Some(home);
+        self
+    }
+
+    /// `(width, height)` of text at its current size (pixels, for an upright label), or `None`
+    /// for anything that isn't text. Handy for placing things next to a label.
+    pub fn dimensions(&self) -> Option<(f32, f32)> {
+        self.geometry.dimensions()
     }
 
     /// World-space bounds used for front-to-back ordering (a point at the position if the

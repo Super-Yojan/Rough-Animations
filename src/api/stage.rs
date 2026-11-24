@@ -3,7 +3,7 @@ use crate::api::{Error, IntoColor, Num, Result, Sketch};
 use crate::render::camera::IsoCamera;
 use crate::render::export::{VideoEncoder, VideoFormat, VideoOptions};
 use crate::world::arena::Id;
-use crate::world::object::Object;
+use crate::world::object::{Home, Object};
 use crate::world::scene::Scene;
 use crate::world::transform::Vec3;
 use std::collections::HashSet;
@@ -122,8 +122,25 @@ impl Stage {
 
     /// Add an object to the scene. It is visible from frame 0 unless an animation such as
     /// `create` or `fade_in` brings it in later.
+    ///
+    /// A `title(..)` or `label(..)` added without a position goes to its default spot: the top
+    /// centre of the canvas, or just under it. Any `.at(..)` / `.base_at(..)` overrides that.
     pub fn add(&mut self, object: impl Into<Object>) -> Id {
+        let mut object = object.into();
+        if let Some(home) = object.home.take() {
+            let (x, y) = self.home_pixel(home);
+            object = object.base_at(self.pixel(x, y));
+        }
         self.scene.add(object)
+    }
+
+    /// The pixel where a title or caption lives on this canvas.
+    pub(crate) fn home_pixel(&self, home: Home) -> (f32, f32) {
+        let (w, h) = (self.width as f32, self.height as f32);
+        match home {
+            Home::Title => (w / 2.0, h * 0.097),
+            Home::Caption => (w / 2.0, h * 0.178),
+        }
     }
 
     /// Append an animation after everything scripted so far.

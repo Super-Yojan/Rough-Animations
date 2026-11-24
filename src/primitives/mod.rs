@@ -193,6 +193,12 @@ pub trait Geometry {
         false
     }
 
+    /// The `(width, height)` text takes up at its current size, in world units (pixels for an
+    /// upright label). `None` for anything that isn't text.
+    fn dimensions(&self) -> Option<(f32, f32)> {
+        None
+    }
+
     /// Change the text size. Ignored by anything that isn't text.
     fn set_font_size(&mut self, _size: f32) {}
 

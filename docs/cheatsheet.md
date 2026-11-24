@@ -27,13 +27,13 @@ on `p`** instead. Rotations are radians: `deg(90)`.
 ## Shapes (all return `Object`, chain builders on them)
 | 3D solids | 2D flat shapes (lie on the floor; `.on(Plane::Front)` for a wall) | other |
 |---|---|---|
-| `cuboid(w,h,d)` `cube(s)` | `circle(r)` `ellipse(rx,ry)` `rect(w,h)` | `line(a,b)` `arrow(a,b)` |
+| `cuboid(w,h,d)` `cube(s)` | `circle(r)` `ellipse(rx,ry)` `rect(w,h)` | `line(a,b)` `arrow(a,b)` `label("..")` (steady caption) `title("..")` (big, lively) |
 | `cylinder(r,h)` `cone(r,h)` `sphere(r)` | `ngon(sides,r)` `star(n,outer,inner)` `polygon([(x,y),..])` | `text("..")` `math(r"\frac12")?` `latex("..")?` |
 | `prism(flat_shape, h)` extrudes a flat shape | booleans: `.union(b)` `.minus(b)` `.intersect(b)` `.xor(b)` | |
 
 Builders: `.at(p)` `.base_at(p)` `.fill(c)` `.stroke(c)` `.color(c)` (fill+stroke) `.opacity(0..1)`
 `.stroke_width(w)` `.rotated(r)` `.scaled(s)` `.layer(n)` `.hidden()`, flat shapes: `.shift(dx,dy)` `.on(plane)`,
-text: `.font_size(n)` `.tracking(em)` (letter spacing, default 0.06) `.animate()` `.handwritten()` (see below). Colours: `"purple"` `"mint"` `"amber"` `"sky"` `"rose"` `"gold"` `"slate"` `"ink"`
+text: `.font_size(n)` `.tracking(em)` (letter spacing, default 0.06) `.animate()` `.handwritten()` (see below). Colours: `"purple"` `"mint"` `"amber"` `"sky"` `"rose"` `"gold"` `"slate"` `"ink"` `"indigo"` `"stone"`
 `"red"` `"green"` `"blue"` `"orange"` `"yellow"` `"pink"` `"teal"` `"brown"` `"gray"` `"black"` `"white"`,
 `"#a882ff"`, or `(r, g, b)`. A wrong name panics and lists the valid ones.
 
@@ -47,12 +47,25 @@ Shape: `morph(id, star(5,70,30))` into another flat shape or prism; `transform_i
 position and colours. Time: `wait(secs)`.
 Tweak: `.duration(secs)` (total length) `.ease(Easing::BackOut)` `.delay(secs)` `.then(b)` `.with(b)`.
 Group (no boxing): `all([a,b])` together, `seq([a,b])` in order, `lag(0.3, [a,b,c])` staggered.
+Lists of ids: `write_all(&ids)` `create_all(&ids)` (staggered), `clear(&ids)` (erase together, 0.7 s).
 
 ## Stage
 `Stage::new(w,h)` then optional `.fps(n)` `.background(c)` `.origin(x,y)` `.zoom(f)` (bigger scene, same line
 widths and text) `.wobble(fps)` (boiling lines) `.sketch(Sketch::clean())`. `s.add(obj) -> Id`, `s.play(anim)`,
 `s.wait(secs)`, `s.render(path)`. **`s.pixel(x, y)`** is the floor point under a screen pixel, so
 `text("Title").at(s.pixel(640, 80))` puts text exactly there (call it after `origin`/`zoom`).
+
+## Layout
+`s.put(obj, x, y)` adds `obj` standing on screen pixel `(x, y)` (text and flat shapes are centred there):
+`s.put(title("Hello"), 640, 80)`, `s.put(label("note"), 200, 600)`. Defaults: `label` is size 32 stone-gray and
+steady, `title` is size 72 indigo and `.animate()`d; override with the usual builders. (A variable named
+`title` or `label` hides the function of that name for the rest of its scope, so call the second one something else.)
+`s.tag(id, "compute", Side::Above)` puts a label beside an object (`Above` `Below` `Left` `Right`), spaced to
+fit the text; pass a styled `label("x").color("rose")` instead of a string to choose its look.
+`s.heading("Title", "caption")` adds a header and caption near the top, sized to the canvas, and returns their ids
+(`""` for no caption). A `title(..)` or `label(..)` added with plain `s.add(..)` and no `.at(..)` goes to the same
+spots: top centre, and just under it.
+`s.screen(point)` is the pixel a world point lands on; `obj.dimensions()` is a text object's size in pixels.
 
 ## Gotchas
 - `create`/`write`/`fade_in` hide their object until they start, so just `add` it (likewise the target of

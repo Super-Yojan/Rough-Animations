@@ -16,7 +16,7 @@ pub use animate::{
 };
 pub use easing::Easing;
 pub use morph::{IntoRegion, Morph, TransformInto, morph, transform_into};
-pub use anim::{Anim, all, lag, seq};
+pub use anim::{Anim, all, clear, create_all, lag, seq, write_all};
 pub use group::{Group, wait};
 
 use crate::world::arena::Id;

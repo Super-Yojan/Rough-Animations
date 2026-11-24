@@ -264,6 +264,10 @@ macro_rules! label_geometry {
             fn set_font_size(&mut self, size: f32) {
                 self.0.size = size;
             }
+            fn dimensions(&self) -> Option<(f32, f32)> {
+                let (w, h) = self.0.run().size();
+                Some((w * self.0.size, h * self.0.size))
+            }
             fn set_tracking(&mut self, tracking: f32) {
                 self.0.set_tracking(tracking);
             }
