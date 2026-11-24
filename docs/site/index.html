@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rough-Animations: hand-drawn 3D and 2D animation in Rust</title>
+<meta name="description" content="Script a Stage in a few lines of Rust and render a whiteboard-style mp4, gif or png. Isometric solids, boolean shapes, morphing, handwritten LaTeX.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="nav"><div class="nav-in">
+  <a class="brand" href="index.html"><i></i>Rough-Animations</a>
+  <a class="l" href="#features">Features</a>
+  <a class="l" href="#how">How it works</a>
+  <a class="l" href="#gallery">Gallery</a>
+  <a class="l" href="docs.html">Docs</a>
+  <span class="sp"></span>
+  <a class="l" href="https://github.com/Super-Yojan/rough-animations">GitHub</a>
+  <a class="btn primary" href="docs.html#quick-start">Get started</a>
+</div></header>
+
+<main>
+<section class="hero">
+  <span class="eyebrow">for Rust · inspired by manim and rough.js</span>
+  <h1>Animations that look <u>sketched</u> on a whiteboard.</h1>
+  <p class="lead">Write a short script, get an mp4, gif or png. Isometric solids, flat shapes with boolean operations, morphing and handwritten LaTeX, all behind a small API that fits on one page.</p>
+  <div class="cta">
+    <a class="btn primary" href="docs.html#quick-start">Read the quick start →</a>
+    <a class="btn ghost" href="docs.html#cheat-sheet">API cheat sheet</a>
+  </div>
+  <div class="install" data-copy='rough-animations = { git = "https://github.com/Super-Yojan/rough-animations" }'><b>Cargo.toml</b> rough-animations = { git = "…/Super-Yojan/rough-animations" } ⧉</div>
+</section>
+
+<div class="stage">
+  <div class="win">
+    <div class="win-bar"><i></i><i></i><i></i><span>src/main.rs</span><button>copy</button></div>
+<pre><code>use rough_animations::prelude::*;
+
+fn main() -> Result {
+    let mut s = Stage::new(900, 600);
+    let tower = s.add(
+        cuboid(80, 110, 80).base_at((0, 0, 0)).fill("purple"),
+    );
+    let note = s.add(text("compute").at((0, 150, 0)));
+    s.play(create(tower));   // outline traced, then filled
+    s.play(write(note));
+    s.play(all([
+        move_by(tower, (100, 0, 0)),
+        fill_to(tower, "rose"),
+    ]).duration(1.5));
+    s.wait(0.5);
+    s.render("out.mp4")      // or .webm .gif .png
+}</code></pre>
+  </div>
+  <div class="preview">
+    <div class="cap">out.mp4 · rendered with the library itself</div>
+    <img src="hero.gif" alt="An isometric scene being sketched into place" width="900" height="600">
+  </div>
+</div>
+
+<section class="blk" id="features">
+  <div class="sh"><h2>Everything a whiteboard has</h2><p>Small pieces that combine. Positions are tuples, colours are names, numbers can be ints or floats.</p></div>
+  <div class="features">
+    <div class="feat"><div class="ic" style="background:var(--purple)">▱</div><h3>Isometric solids</h3><p>Cuboids, cylinders, cones, spheres and extruded prisms. Nearer objects hide the ones behind them, so stacking just works.</p><div class="mini">cube(70).base_at((0,0,0))
+sphere(36).fill("sky")</div></div>
+    <div class="feat"><div class="ic" style="background:var(--mint)">∪</div><h3>Boolean shapes</h3><p>Combine flat shapes with union, intersect, minus and xor, then extrude the result into a solid with holes.</p><div class="mini">prism(rect(80,80)
+  .minus(circle(25)), 30)</div></div>
+    <div class="feat"><div class="ic" style="background:var(--amber)">↝</div><h3>Morphing</h3><p>Turn any flat shape, or any extruded solid, into any other. Outlines are paired and interpolated for you.</p><div class="mini">morph(a, star(5, 70, 30))
+  .ease(Easing::BackOut)</div></div>
+    <div class="feat"><div class="ic" style="background:var(--rose)">∫</div><h3>Handwritten LaTeX</h3><p>Formulas typeset by LaTeX and written on letter by letter. Add <code>.handwritten()</code> for a pen-drawn look.</p><div class="mini">math(r"\int_0^1 x^2\,dx")?
+  .handwritten()</div></div>
+    <div class="feat"><div class="ic" style="background:var(--sky,#82c3ff)">◎</div><h3>Composable motion</h3><p>Animations are values. Tweak them with <code>.duration()</code> and <code>.ease()</code>, group them with <code>all</code>, <code>seq</code> and <code>lag</code>.</p><div class="mini">lag(0.3, [move_by(a, d),
+          move_by(b, d)])</div></div>
+    <div class="feat"><div class="ic" style="background:var(--gold,#fad75a)">✎</div><h3>Agent friendly</h3><p>Scenes are a handful of lines, and the repo ships a Claude Code skill that teaches the draw-a-still-first workflow.</p><div class="mini">cp -r .claude/skills/\
+  rough-animations ~/.claude/skills/</div></div>
+  </div>
+</section>
+
+<section class="blk" id="how">
+  <div class="sh"><h2>Three steps to a video</h2><p>Add objects, play animations, render. A stage plays once, so build a fresh one per video.</p></div>
+  <div class="steps">
+    <div class="step"><h3>Add</h3><p>Every shape is one function returning an <code>Object</code>. Chain builders to place and colour it.</p>
+<pre><code>let a = s.add(circle(50).fill("purple"));</code></pre></div>
+    <div class="step"><h3>Play</h3><p>Animations are values you build, tweak, combine and hand to <code>play</code>.</p>
+<pre><code>s.play(create(a));
+s.play(morph(a, star(5, 70, 30)));</code></pre></div>
+    <div class="step"><h3>Render</h3><p>The extension picks the output: mp4, webm or gif for video, png for the last frame.</p>
+<pre><code>s.render("out.mp4")</code></pre></div>
+  </div>
+</section>
+
+<section class="blk">
+  <div class="sh"><h2>See the code behind it</h2><p>Each tab is a complete program you can paste into <code>src/main.rs</code>.</p></div>
+  <div class="tabs">
+    <div class="tab-row">
+      <button aria-selected="true">Shapes</button><button aria-selected="false">Animation</button><button aria-selected="false">Text &amp; LaTeX</button><button aria-selected="false">The look</button>
+    </div>
+    <div class="tab-pane on">
+      <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>shapes.rs</span><button>copy</button></div>
+<pre><code>use rough_animations::prelude::*;
+
+fn main() -> Result {
+    let mut s = Stage::new(900, 600);
+    s.add(cube(70).base_at((-150, 0, 0)).fill("purple"));
+    s.add(sphere(36).base_at((-40, 0, 0)).fill("sky"));
+    // Combine flat shapes, then extrude the result into a solid with a hole.
+    let plate = rect(80, 80).minus(circle(25));
+    s.add(prism(plate, 30).base_at((90, 0, 0)).fill("rose"));
+    s.render("shapes.png")
+}</code></pre></div>
+      <div class="preview"><div class="cap">shapes.png</div><img src="shapes.png" alt="Solids and flat shapes" loading="lazy"></div>
+    </div>
+    <div class="tab-pane">
+      <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>anim.rs</span><button>copy</button></div>
+<pre><code>use rough_animations::prelude::*;
+
+fn main() -> Result {
+    let mut s = Stage::new(900, 600);
+    let a = s.add(circle(50).fill("purple"));
+    let b = s.add(cuboid(60, 60, 60).base_at((120, 0, 0)).fill("mint"));
+    s.play(all([create(a), create(b)]).duration(1.2));
+    s.play(morph(a, star(5, 70, 30)).ease(Easing::BackOut));       // circle into a star
+    s.play(lag(0.3, [move_by(a, (0, 0, 80)), move_by(b, (0, 0, 80))]));
+    s.play(rotate_by(b, (0, deg(90), 0)).duration(1).delay(0.5));  // duration first, then delay
+    s.render("anim.mp4")
+}</code></pre></div>
+      <div class="preview"><div class="cap">occlusion.png · nearer objects hide those behind</div><img src="occlusion.png" alt="Objects hide each other" loading="lazy"></div>
+    </div>
+    <div class="tab-pane">
+      <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>hello.rs</span><button>copy</button></div>
+<pre><code>use rough_animations::prelude::*;
+
+fn main() -> Result {
+    let mut s = Stage::new(1280, 720).zoom(1.4);
+    let title = s.add(text("Hello").font_size(90).color("#3c3278").animate().at(s.pixel(640, 120)));
+    let formula = s.add(math(r"\int_0^1 x^2\,dx = \frac{1}{3}")?.font_size(70).color("rose").handwritten().at(s.pixel(640, 320)));
+    s.play(write(title));
+    s.play(write(formula).duration(2));
+    s.render("hello.mp4")
+}</code></pre></div>
+      <div class="preview"><div class="cap">text.png</div><img src="text.png" alt="Text and LaTeX" loading="lazy"></div>
+    </div>
+    <div class="tab-pane">
+      <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>look.rs</span><button>copy</button></div>
+<pre><code>use rough_animations::prelude::*;
+
+fn main() -> Result {
+    // Straight lines, a dark page, and strokes redrawn 8x a second.
+    let mut s = Stage::new(900, 600)
+        .sketch(Sketch::clean())
+        .background("#101018")
+        .wobble(8);
+    let c = s.add(cube(80).base_at((0, 0, 0)).fill("mint"));
+    s.play(create(c));
+    s.render("look.mp4")
+}</code></pre></div>
+      <div class="preview"><div class="cap">handwritten.png · typeset (left) vs <code>.handwritten()</code> (right)</div><img src="handwritten.png" alt="Typeset and handwritten formulas" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+
+<section class="blk" id="gallery">
+  <div class="sh"><h2>Gallery</h2><p>Every image here comes from a script in <code>examples/</code>.</p></div>
+  <div class="gallery">
+    <figure><img src="shapes.png" alt="" loading="lazy"><figcaption>Solids, extruded shapes and arrows · examples/shapes.rs</figcaption></figure>
+    <figure><img src="booleans.png" alt="" loading="lazy"><figcaption>union, intersect, minus, xor · examples/shapes.rs</figcaption></figure>
+    <figure><img src="occlusion.png" alt="" loading="lazy"><figcaption>Stacking and hidden lines · examples/occlusion.rs</figcaption></figure>
+    <figure><img src="text.png" alt="" loading="lazy"><figcaption>Labels, floor text and LaTeX · examples/text.rs</figcaption></figure>
+  </div>
+</section>
+
+<section class="blk">
+  <div class="agent">
+    <div>
+      <h2>Built to be driven by an AI agent</h2>
+      <p>You cannot watch a video, but you can sample one. The bundled skill teaches the loop: write a short script, draw a still first, then check the motion from a contact sheet of frames.</p>
+      <a class="btn" href="docs.html#agents">Using it with agents →</a>
+    </div>
+    <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span></div>
+<pre><code data-lang="sh">S=.claude/skills/rough-animations/scripts
+$S/contact-sheet.sh target/out.mp4 1.5 4 target/sheet.png
+$S/frame.sh target/out.mp4 -0.5 target/end.png</code></pre></div>
+  </div>
+</section>
+
+<section class="final">
+  <h2>Sketch your first scene in five minutes.</h2>
+  <div class="cta"><a class="btn primary" href="docs.html#quick-start">Quick start →</a><a class="btn ghost" href="docs.html">Browse the docs</a></div>
+</section>
+</main>
+
+<footer>Rough-Animations · built on roughr, tiny-skia and i_overlay · font: Patrick Hand (SIL OFL 1.1) · landing-page references from Mobbin (Vercel, Height, Anchor, Bird)</footer>
+<script src="site.js"></script>
+</body>
+</html>

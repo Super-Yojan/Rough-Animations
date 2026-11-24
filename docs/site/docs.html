@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docs · Rough-Animations</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="nav"><div class="nav-in">
+  <a class="brand" href="index.html"><i></i>Rough-Animations</a>
+  <a class="l" href="index.html#features">Features</a>
+  <a class="l" href="index.html#gallery">Gallery</a>
+  <a class="l" href="docs.html"><b>Docs</b></a>
+  <span class="sp"></span>
+  <a class="l" href="https://github.com/Super-Yojan/rough-animations">GitHub</a>
+  <a class="btn primary" href="#quick-start">Quick start</a>
+</div></header>
+
+<div class="docs">
+<nav class="side">
+  <input class="search" type="search" placeholder="Search the docs…" aria-label="Search the docs">
+  <h4>Start</h4>
+  <a href="#introduction" data-k="overview what">Introduction</a>
+  <a href="#installation" data-k="requirements ffmpeg latex cargo">Installation</a>
+  <a href="#quick-start" data-k="hello first">Quick start</a>
+  <h4>Concepts</h4>
+  <a href="#world" data-k="coordinates axes isometric origin">The world</a>
+  <a href="#stage" data-k="new fps zoom origin background">Stage</a>
+  <a href="#objects" data-k="add builders fill stroke opacity id">Objects &amp; builders</a>
+  <a href="#colors" data-k="colour hex palette">Colours</a>
+  <h4>Drawing</h4>
+  <a href="#solids" data-k="cuboid cube cylinder cone sphere prism 3d">3D solids</a>
+  <a href="#flat-shapes" data-k="circle rect star polygon ngon plane on 2d">Flat shapes</a>
+  <a href="#booleans" data-k="union minus intersect xor extrude hole">Booleans</a>
+  <a href="#lines" data-k="line arrow">Lines &amp; arrows</a>
+  <a href="#text" data-k="label title math latex handwritten font">Text &amp; LaTeX</a>
+  <h4>Animating</h4>
+  <a href="#animations" data-k="create write fade move rotate scale morph">Animations</a>
+  <a href="#timing" data-k="duration ease delay then with easing">Timing &amp; easing</a>
+  <a href="#combining" data-k="all seq lag group stagger">Combining</a>
+  <a href="#morphing" data-k="morph transform_into">Morphing</a>
+  <h4>Layout &amp; look</h4>
+  <a href="#layout" data-k="put tag heading pixel screen">Layout helpers</a>
+  <a href="#look" data-k="sketch clean wobble roughness hatch">The look</a>
+  <h4>Output</h4>
+  <a href="#rendering" data-k="render mp4 gif png webm still">Rendering</a>
+  <a href="#recipes" data-k="avatar scene example">Recipes</a>
+  <a href="#agents" data-k="claude skill ai">Using it with agents</a>
+  <h4>Reference</h4>
+  <a href="#cheat-sheet" data-k="api all">Cheat sheet</a>
+  <a href="#troubleshooting" data-k="error panic fix">Troubleshooting</a>
+  <a href="#limitations">Limitations</a>
+</nav>
+
+<article class="main">
+<h1>Documentation</h1>
+<p class="sub">Everything you need to script hand-drawn 3D and 2D animations in Rust.</p>
+
+<h2 id="introduction">Introduction</h2>
+<p><strong>Rough-Animations</strong> is a Rust library for making short explainer animations that look sketched on a whiteboard. You describe a scene with a <code>Stage</code>: add objects, play animations, then render to mp4, webm, gif or png. It is inspired by <a href="https://www.manim.community/">manim</a> and uses <a href="https://roughjs.com/">rough.js</a>-style drawing.</p>
+<p>The whole API is deliberately small. Positions are tuples, colours are names, and numbers can be ints or floats, so a scene is a handful of lines.</p>
+<div class="note tip"><b>Tip</b> The complete API fits on one page, the <a href="#cheat-sheet">cheat sheet</a>. It is also the front page of <code>cargo doc --open</code>.</div>
+
+<h2 id="installation">Installation</h2>
+<p>Add the crate from Git, since it is not published on crates.io:</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>Cargo.toml</span><button>copy</button></div>
+<pre><code data-lang="toml">[dependencies]
+rough-animations = { git = "https://github.com/Super-Yojan/rough-animations" }</code></pre></div>
+<table>
+<tr><th>For</th><th>You need</th></tr>
+<tr><td>Building</td><td>Rust 1.85 or newer (the crate uses edition 2024)</td></tr>
+<tr><td><code>.mp4</code> <code>.webm</code> <code>.gif</code> output</td><td><a href="https://ffmpeg.org/">ffmpeg</a> on your <code>PATH</code></td></tr>
+<tr><td><code>math(..)</code> and <code>latex(..)</code></td><td><code>pdflatex</code>, plus <code>pdftocairo</code> (poppler) or <code>mutool</code> (MuPDF)</td></tr>
+</table>
+<p>PNG output and everything else work without any of these, so you can start with stills.</p>
+
+<h2 id="quick-start">Quick start</h2>
+<p>Create <code>src/main.rs</code>:</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>src/main.rs</span><button>copy</button></div>
+<pre><code>use rough_animations::prelude::*;
+
+fn main() -> Result {
+    let mut s = Stage::new(900, 600);                                   // hand-drawn look, isometric camera
+    let tower = s.add(cuboid(80, 110, 80).base_at((0, 0, 0)).fill("purple"));
+    let note = s.add(text("compute").at((0, 150, 0)));
+    s.play(create(tower));                                              // outline traced, then filled in
+    s.play(write(note));
+    s.play(all([move_by(tower, (100, 0, 0)), fill_to(tower, "rose")]).duration(1.5));
+    s.wait(0.5);
+    s.render("out.mp4")                                                 // .mp4 .webm .gif, or .png for the last frame
+}</code></pre></div>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span><button>copy</button></div>
+<pre><code data-lang="sh">cargo run --release</code></pre></div>
+<div class="note warn"><b>Always --release.</b> Debug builds are far slower at drawing frames.</div>
+<p>Four things happened: <code>Stage::new</code> made a 900×600 canvas, <code>s.add</code> put objects in the scene and returned ids, <code>s.play</code> queued animations one after another, and <code>s.render</code> drew every frame and encoded the file.</p>
+<div class="note tip"><b>Tip</b> Layout mistakes are far cheaper to find in one picture than in a video. While you work, end with <code>s.render("target/check.png")</code>. It draws the finished scene and needs no ffmpeg.</div>
+
+<h2 id="world">The world</h2>
+<p>The camera is isometric. <strong>x</strong> runs to the lower right, <strong>z</strong> to the lower left, and <strong>y is up</strong>. The point <code>(0, 0, 0)</code> sits at the screen point set by <code>Stage::origin(x, y)</code>, which by default is the centre, 60% of the way down.</p>
+<ul>
+<li>Positions are <code>(x, y, z)</code> tuples.</li>
+<li>Sizes, positions, times and angles can be ints or floats. Only counts (<code>ngon</code> sides, <code>star</code> points) must be whole numbers.</li>
+<li>Rotations are radians. Use <code>deg(90)</code> to convert.</li>
+<li>Solids are centred on their position. <code>.base_at(p)</code> stands them on <code>p</code> instead, which saves half-height arithmetic.</li>
+</ul>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>stacking</span><button>copy</button></div>
+<pre><code>let base = s.add(cuboid(120, 40, 120).base_at((0, 0, 0)).fill("slate"));
+// Stand the next box on top of the first: its base is the first box's top, y = 40.
+let top = s.add(cube(60).base_at((0, 40, 0)).fill("amber"));</code></pre></div>
+<p>Nearer objects hide the ones behind them automatically, so stacking and overlap just work.</p>
+
+<h2 id="stage">Stage</h2>
+<p>A <code>Stage</code> owns the scene and its timeline. Create one with a size, then optionally chain settings:</p>
+<table>
+<tr><th>Method</th><th>What it does</th></tr>
+<tr><td><code>Stage::new(w, h)</code></td><td>A canvas in pixels, with the sketch look and isometric camera</td></tr>
+<tr><td><code>.fps(n)</code></td><td>Frames per second of the video</td></tr>
+<tr><td><code>.background(c)</code></td><td>Page colour, e.g. <code>"#101018"</code></td></tr>
+<tr><td><code>.origin(x, y)</code></td><td>Screen pixel where <code>(0,0,0)</code> lands</td></tr>
+<tr><td><code>.zoom(f)</code></td><td>Scale the scene; line widths and text keep their size</td></tr>
+<tr><td><code>.sketch(Sketch)</code></td><td>How hand-drawn lines look, see <a href="#look">The look</a></td></tr>
+<tr><td><code>.wobble(fps)</code></td><td>Redraw strokes this many times a second for a "boiling line" feel</td></tr>
+<tr><td><code>s.add(obj) -> Id</code></td><td>Put an object in the scene</td></tr>
+<tr><td><code>s.play(anim)</code></td><td>Append an animation to the timeline</td></tr>
+<tr><td><code>s.wait(secs)</code></td><td>Hold the current picture</td></tr>
+<tr><td><code>s.render(path)</code></td><td>Draw and write the file</td></tr>
+<tr><td><code>s.pixel(x, y)</code></td><td>The floor point under a screen pixel</td></tr>
+</table>
+<div class="note warn"><b>A Stage plays once.</b> Build a fresh one for each video. A <code>.png</code> (last frame) can follow a video from the same stage, but a video after a <code>.png</code> is an error.</div>
+
+<h2 id="objects">Objects &amp; builders</h2>
+<p>Every shape function returns an <code>Object</code>. Chain builders to style and place it, then <code>s.add</code> it to get an <code>Id</code> that animations refer to.</p>
+<table>
+<tr><th>Builder</th><th>Meaning</th></tr>
+<tr><td><code>.at(p)</code></td><td>Centre the object on <code>p</code></td></tr>
+<tr><td><code>.base_at(p)</code></td><td>Stand a solid on <code>p</code></td></tr>
+<tr><td><code>.fill(c)</code> <code>.stroke(c)</code> <code>.color(c)</code></td><td>Fill colour, outline colour, or both</td></tr>
+<tr><td><code>.opacity(0..1)</code></td><td>Transparency</td></tr>
+<tr><td><code>.stroke_width(w)</code></td><td>Outline thickness</td></tr>
+<tr><td><code>.rotated(r)</code> <code>.scaled(s)</code></td><td>Initial rotation (radians) and scale</td></tr>
+<tr><td><code>.layer(n)</code></td><td>Draw order tweak</td></tr>
+<tr><td><code>.hidden()</code></td><td>Start invisible</td></tr>
+<tr><td><code>.solid()</code> <code>.hatched()</code></td><td>Flat fill versus hatching</td></tr>
+<tr><td><code>.shift(dx, dy)</code> <code>.on(plane)</code></td><td>Flat shapes only: nudge in the shape's own plane, or stand it on a wall</td></tr>
+</table>
+<p><code>create</code>, <code>write</code> and <code>fade_in</code> hide their object until they start, so just <code>add</code> it and never hide it yourself. Other animations do not hide anything.</p>
+
+<h2 id="colors">Colours</h2>
+<p>A colour is a name, a hex string like <code>"#a882ff"</code> (also <code>"#rgb"</code>), or an <code>(r, g, b)</code> tuple. A wrong name panics and lists the valid ones.</p>
+<div class="swatches">
+<span class="sw"><i style="background:#a882ff"></i>purple</span><span class="sw"><i style="background:#73d2a5"></i>mint</span><span class="sw"><i style="background:#ffb96e"></i>amber</span><span class="sw"><i style="background:#82c3ff"></i>sky</span><span class="sw"><i style="background:#ff788c"></i>rose</span><span class="sw"><i style="background:#fad75a"></i>gold</span><span class="sw"><i style="background:#e1e1e8"></i>slate</span><span class="sw"><i style="background:#232328"></i>ink</span><span class="sw"><i style="background:#3c3278"></i>indigo</span><span class="sw"><i style="background:#6a6a80"></i>stone</span><span class="sw"><i style="background:#dc3c3c"></i>red</span><span class="sw"><i style="background:#50b464"></i>green</span><span class="sw"><i style="background:#4678dc"></i>blue</span><span class="sw"><i style="background:#f5963c"></i>orange</span><span class="sw"><i style="background:#f5d746"></i>yellow</span><span class="sw"><i style="background:#f596be"></i>pink</span><span class="sw"><i style="background:#3caaaa"></i>teal</span><span class="sw"><i style="background:#966446"></i>brown</span><span class="sw"><i style="background:#96969e"></i>gray</span><span class="sw"><i style="background:#000"></i>black</span><span class="sw"><i style="background:#fff"></i>white</span>
+</div>
+
+<h2 id="solids">3D solids</h2>
+<table>
+<tr><th>Function</th><th>Description</th></tr>
+<tr><td><code>cuboid(w, h, d)</code></td><td>A box</td></tr>
+<tr><td><code>cube(s)</code></td><td>A box with equal sides</td></tr>
+<tr><td><code>cylinder(r, h)</code></td><td>A cylinder standing on the floor</td></tr>
+<tr><td><code>cone(r, h)</code></td><td>A cone</td></tr>
+<tr><td><code>sphere(r)</code></td><td>A sphere</td></tr>
+<tr><td><code>prism(flat_shape, h)</code></td><td>Extrude a flat shape upward into a solid</td></tr>
+</table>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>solids</span><button>copy</button></div>
+<pre><code>let mut s = Stage::new(900, 600);
+s.add(cube(70).base_at((-150, 0, 0)).fill("purple"));
+s.add(cylinder(30, 90).base_at((-40, 0, 0)).fill("mint"));
+s.add(cone(35, 80).base_at((70, 0, 0)).fill("amber"));
+s.add(sphere(36).base_at((170, 0, 0)).fill("sky"));</code></pre></div>
+<img src="shapes.png" alt="Solids and flat shapes" style="border:1.5px solid var(--ink);border-radius:12px;max-width:760px">
+
+<h2 id="flat-shapes">Flat shapes</h2>
+<p>Flat shapes lie on the floor by default. They are the raw material for booleans and <code>prism</code>.</p>
+<table>
+<tr><th>Function</th><th>Description</th></tr>
+<tr><td><code>circle(r)</code> <code>ellipse(rx, ry)</code></td><td>Round shapes</td></tr>
+<tr><td><code>rect(w, h)</code></td><td>Rectangle</td></tr>
+<tr><td><code>ngon(sides, r)</code></td><td>Regular polygon; <code>sides</code> must be a whole number</td></tr>
+<tr><td><code>star(n, outer, inner)</code></td><td>Star with <code>n</code> points</td></tr>
+<tr><td><code>polygon([(x, y), ..])</code></td><td>Any outline from 2D points</td></tr>
+</table>
+<h3 id="planes">Standing a flat shape on a wall</h3>
+<p><code>.on(Plane::Front)</code> lays a flat shape on the visible face at <code>z = +half-size</code> of a box (the wall facing the right of the screen). <code>Plane::Side</code> is the wall facing the left, and <code>Plane::Ground</code> is the default floor. Nudge shapes a hair in front of the face to keep depth ordering exact.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>face on a box</span><button>copy</button></div>
+<pre><code>let head = s.add(cuboid(100, 100, 100).base_at((0, 90, 0)).fill("#f4c7a1"));
+// The head's front face is the plane z = 50; sit the eye just in front of it.
+let eye = s.add(circle(11).fill("white").solid().on(Plane::Front).at((-22, 148, 50.5)));</code></pre></div>
+<div class="note"><b>Note</b> <code>.on()</code> is for flat shapes and text, not solids. Calling it on a solid panics.</div>
+
+<h2 id="booleans">Booleans &amp; extrusion</h2>
+<p>Combine flat shapes with <code>.union(b)</code>, <code>.minus(b)</code>, <code>.intersect(b)</code> and <code>.xor(b)</code>. Do it <strong>before</strong> placing the result, then extrude it to get a solid with holes.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>booleans.rs</span><button>copy</button></div>
+<pre><code>let plate = rect(80, 80).minus(circle(25));          // a square with a round hole
+s.add(prism(plate, 40).base_at((90, 0, 0)).fill("rose"));</code></pre></div>
+<img src="booleans.png" alt="Boolean operations" style="border:1.5px solid var(--ink);border-radius:12px;max-width:760px">
+<p>Booleans are 2D only. There are no 3D booleans, but <code>prism</code> of a combined shape covers most needs.</p>
+
+<h2 id="lines">Lines &amp; arrows</h2>
+<p><code>line(a, b)</code> and <code>arrow(a, b)</code> take two world points.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>arrows</span><button>copy</button></div>
+<pre><code>s.add(arrow((0, 0, 0), (120, 0, 0)).color("indigo"));</code></pre></div>
+
+<h2 id="text">Text &amp; LaTeX</h2>
+<table>
+<tr><th>Function</th><th>Description</th></tr>
+<tr><td><code>text("..")</code></td><td>Plain text in the handwriting font</td></tr>
+<tr><td><code>label("..")</code></td><td>A steady caption: size 32, stone grey</td></tr>
+<tr><td><code>title("..")</code></td><td>A big lively title: size 72, indigo, <code>.animate()</code>d</td></tr>
+<tr><td><code>math(r"\frac12")?</code></td><td>A formula in math mode. Returns a <code>Result</code>, so use <code>?</code></td></tr>
+<tr><td><code>latex("..")?</code></td><td>Arbitrary LaTeX</td></tr>
+</table>
+<p>Text builders: <code>.font_size(n)</code>, <code>.tracking(em)</code> (letter spacing, default 0.06), <code>.animate()</code>, <code>.handwritten()</code>, plus the usual colours.</p>
+<ul>
+<li><strong>Default:</strong> crisp and steady, solid fill, written on with a wipe. It stays readable.</li>
+<li><strong><code>.animate()</code></strong> adds the lively hand-drawn wobble. Great on a big title, hard to read when small.</li>
+<li><strong><code>.handwritten()</code></strong> makes text, <code>math</code> or <code>latex</code> look written by hand: wobbly, slightly uneven letters, a drifting baseline and a pen's weight. It is calculated once, so it does not flicker.</li>
+<li><code>.solid()</code> and <code>.hatched()</code> switch the fill; <code>.stroke_width(w)</code> adds a sketchy outline.</li>
+</ul>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>hello.rs</span><button>copy</button></div>
+<pre><code>let mut s = Stage::new(1280, 720).zoom(1.4);
+let title = s.add(text("Hello").font_size(90).color("#3c3278").animate().at(s.pixel(640, 120)));
+let formula = s.add(math(r"\int_0^1 x^2\,dx = \frac{1}{3}")?.font_size(70).color("rose").handwritten().at(s.pixel(640, 320)));
+s.play(write(title));
+s.play(write(formula).duration(2));</code></pre></div>
+<img src="handwritten.png" alt="Typeset versus handwritten formulas" style="border:1.5px solid var(--ink);border-radius:12px;max-width:760px">
+<div class="note warn"><b>LaTeX needs tools.</b> <code>math</code> and <code>latex</code> need <code>pdflatex</code> plus <code>pdftocairo</code> or <code>mutool</code>. A misspelled macro reports <code>LaTeX error: Undefined control sequence</code>.</div>
+
+<h2 id="animations">Animations</h2>
+<p>Each function takes an <code>Id</code> from <code>s.add(..)</code> and returns an <code>Anim</code> you pass to <code>s.play</code>.</p>
+<table>
+<tr><th>Kind</th><th>Functions</th></tr>
+<tr><td>Appear</td><td><code>create(id)</code> <code>write(id)</code> (same, but text goes letter by letter) <code>fade_in(id)</code></td></tr>
+<tr><td>Disappear</td><td><code>uncreate(id)</code> <code>fade_out(id)</code></td></tr>
+<tr><td>Move</td><td><code>move_to(id, p)</code> <code>move_by(id, d)</code> <code>move_from(id, offset)</code> (settles onto the current spot)</td></tr>
+<tr><td>Change</td><td><code>rotate_to/by(id, r)</code> <code>scale_to(id, s)</code> <code>opacity_to(id, a)</code> <code>fill_to(id, c)</code> <code>stroke_to(id, c)</code></td></tr>
+<tr><td>Shape</td><td><code>morph(id, shape)</code> <code>transform_into(id, other_id)</code></td></tr>
+<tr><td>Time</td><td><code>wait(secs)</code></td></tr>
+</table>
+
+<h2 id="timing">Timing &amp; easing</h2>
+<p>Tweak any <code>Anim</code> with builders:</p>
+<table>
+<tr><th>Builder</th><th>Meaning</th></tr>
+<tr><td><code>.duration(secs)</code></td><td>The <em>total</em> length</td></tr>
+<tr><td><code>.delay(secs)</code></td><td>Wait before starting. Put it <strong>after</strong> <code>.duration()</code></td></tr>
+<tr><td><code>.ease(Easing::X)</code></td><td>The speed curve. Only affects single animations</td></tr>
+<tr><td><code>.then(b)</code></td><td>Run <code>b</code> after this</td></tr>
+<tr><td><code>.with(b)</code></td><td>Run <code>b</code> alongside this</td></tr>
+</table>
+<p><code>Easing</code> variants: <code>Linear</code>, <code>QuadIn</code>, <code>QuadOut</code>, <code>QuadInOut</code>, <code>CubicIn</code>, <code>CubicOut</code>, <code>CubicInOut</code> (default, smooth start and stop), <code>SineInOut</code>, <code>BackOut</code> (overshoots, then settles) and <code>BounceOut</code>.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>timing</span><button>copy</button></div>
+<pre><code>s.play(rotate_by(b, (0, deg(90), 0)).duration(1).delay(0.5));   // 1 s long, starts after 0.5 s
+s.play(move_by(a, (80, 0, 0)).ease(Easing::BounceOut));</code></pre></div>
+<div class="note warn"><b>Order matters.</b> <code>.duration()</code> is the total length including the delay, so write <code>.duration(..)</code> first and <code>.delay(..)</code> after.</div>
+
+<h2 id="combining">Combining animations</h2>
+<table>
+<tr><th>Function</th><th>Behaviour</th></tr>
+<tr><td><code>all([a, b])</code></td><td>Together</td></tr>
+<tr><td><code>seq([a, b])</code></td><td>One after another</td></tr>
+<tr><td><code>lag(0.3, [a, b, c])</code></td><td>Staggered, each starting 0.3 s after the last</td></tr>
+<tr><td><code>write_all(&amp;ids)</code> <code>create_all(&amp;ids)</code></td><td>Staggered appearance of a list of ids</td></tr>
+<tr><td><code>clear(&amp;ids)</code></td><td>Erase a list together (0.7 s)</td></tr>
+</table>
+<p>Groups take arrays directly, with no boxing needed.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>scenes</span><button>copy</button></div>
+<pre><code>let parts = [torso, neck, head];
+s.play(lag(0.3, parts.map(|id| create(id).duration(0.9))));
+s.wait(1);
+s.play(clear(&amp;parts));     // wipe the scene before the next idea</code></pre></div>
+
+<h2 id="morphing">Morphing</h2>
+<p><code>morph(id, shape)</code> turns a flat shape, or an extruded solid, into another flat shape or prism. Outlines are paired, given the same number of points, and interpolated. <code>transform_into(id, other_id)</code> also takes the target's position and colours; add the target with <code>s.add</code> first (it stays hidden until used).</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>morph.rs</span><button>copy</button></div>
+<pre><code>let a = s.add(circle(50).fill("purple"));
+s.play(create(a));
+s.play(morph(a, star(5, 70, 30)).ease(Easing::BackOut));   // circle into a star</code></pre></div>
+
+<h2 id="layout">Layout helpers</h2>
+<p>Placing things in world coordinates is awkward for titles, so the layout helpers work in screen pixels.</p>
+<table>
+<tr><th>Helper</th><th>What it does</th></tr>
+<tr><td><code>s.put(obj, x, y)</code></td><td>Add <code>obj</code> standing on screen pixel <code>(x, y)</code>; text and flat shapes are centred there</td></tr>
+<tr><td><code>s.tag(id, "name", Side::Above)</code></td><td>Label beside an object. <code>Side</code> is <code>Above</code>, <code>Below</code>, <code>Left</code> or <code>Right</code>. Pass <code>label("x").color("rose")</code> to style it</td></tr>
+<tr><td><code>s.heading("Title", "caption")</code></td><td>Header and caption near the top, sized to the canvas; returns their ids (<code>""</code> for no caption)</td></tr>
+<tr><td><code>s.pixel(x, y)</code></td><td>The world floor point under a screen pixel (call after <code>origin</code>/<code>zoom</code>)</td></tr>
+<tr><td><code>s.screen(point)</code></td><td>The pixel a world point lands on</td></tr>
+<tr><td><code>obj.dimensions()</code></td><td>A text object's size in pixels</td></tr>
+</table>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>layout</span><button>copy</button></div>
+<pre><code>let intro = s.heading("Meet Pixel", "a 3D avatar, built from a handful of shapes");
+let box_id = s.add(cube(80).base_at((0, 0, 0)).fill("sky"));
+s.tag(box_id, "compute", Side::Above);
+s.put(label("note"), 200, 600);</code></pre></div>
+<p>A <code>title(..)</code> or <code>label(..)</code> added with plain <code>s.add(..)</code> and no <code>.at(..)</code> goes to the top centre, and just under it.</p>
+<div class="note"><b>Name clash</b> A variable called <code>title</code> or <code>label</code> hides the function of the same name for the rest of its scope. Name the variable something else.</div>
+
+<h2 id="look">The look</h2>
+<p><code>Sketch::default()</code> is the classic whiteboard look. <code>Sketch::clean()</code> gives straight lines with the same hatching.</p>
+<table>
+<tr><th>Setting</th><th>Meaning</th><th>Default</th></tr>
+<tr><td><code>roughness</code></td><td>How far lines wander from straight</td><td>1.3</td></tr>
+<tr><td><code>bowing</code></td><td>How much lines bow in the middle</td><td>1.2</td></tr>
+<tr><td><code>stroke_width</code></td><td>Outline thickness</td><td>1.6</td></tr>
+<tr><td><code>hachure_gap</code></td><td>Distance between hatch lines</td><td>6.0</td></tr>
+<tr><td><code>hachure_angle</code></td><td>Hatch angle in degrees</td><td>-41</td></tr>
+</table>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>look.rs</span><button>copy</button></div>
+<pre><code>let s = Stage::new(900, 600)
+    .sketch(Sketch::default().roughness(2.0).hatch_gap(9.0))
+    .background("#101018")
+    .wobble(8);        // redraw strokes 8x a second: boiling lines</code></pre></div>
+<p>Strokes are seeded per object, so they stay put from frame to frame instead of shimmering, unless you ask for <code>wobble</code>.</p>
+
+<h2 id="rendering">Rendering</h2>
+<p><code>s.render(path)</code> picks the output from the extension:</p>
+<table>
+<tr><th>Extension</th><th>Result</th><th>Needs</th></tr>
+<tr><td><code>.mp4</code> <code>.webm</code> <code>.gif</code></td><td>The whole animation as a video</td><td>ffmpeg</td></tr>
+<tr><td><code>.png</code></td><td>Only the final frame</td><td>nothing</td></tr>
+</table>
+<p>Other extensions return an error. Render the video first and the png after, never the other way round. For lower-level control there are <code>s.still(path)</code>, <code>s.render_frame(t)</code>, <code>s.render_video(..)</code> and <code>s.render_png_sequence(dir, fps)</code>, plus <code>s.duration()</code> to read the timeline length.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>both outputs</span><button>copy</button></div>
+<pre><code>s.render("target/out.mp4")?;      // video first
+s.render("target/out.png")        // then the last frame, from the same stage</code></pre></div>
+<p>Frames are piped as raw RGBA to ffmpeg. Missing parent directories for a png are created for you.</p>
+
+<h2 id="recipes">Recipes</h2>
+<h3 id="recipe-scenes">Multi-scene videos</h3>
+<p>One idea per scene: build it, <code>write_all</code> or <code>create_all</code> its parts, hold with <code>s.wait(..)</code>, then <code>clear(&amp;ids)</code> before the next. <code>examples/intro.rs</code> is a full example, and it is the video you can watch on the README.</p>
+<h3 id="recipe-avatar">Build a character</h3>
+<p><code>examples/avatar.rs</code> builds a 3D avatar from boxes and flat shapes that draws itself, blinks and smiles. The trick is to stack boxes with <code>base_at</code> and lay the face on the head's front plane with <code>.on(Plane::Front)</code>.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span><button>copy</button></div>
+<pre><code data-lang="sh">cargo run --release --example avatar</code></pre></div>
+<h3 id="recipe-examples">Run the bundled examples</h3>
+<table>
+<tr><th>Example</th><th>Produces</th></tr>
+<tr><td><code>hello</code></td><td><code>target/hello.mp4</code>, the smallest useful script</td></tr>
+<tr><td><code>architecture</code></td><td>a still isometric sketch</td></tr>
+<tr><td><code>animate</code></td><td><code>target/animate.mp4</code> and <code>.gif</code>, the scene being built up</td></tr>
+<tr><td><code>shapes</code></td><td><code>target/shapes.png</code> and <code>target/booleans.png</code></td></tr>
+<tr><td><code>morph</code></td><td><code>target/morph.mp4</code>, shapes and solids morphing</td></tr>
+<tr><td><code>text</code></td><td><code>target/text.mp4</code> and <code>.png</code>, labels and a formula</td></tr>
+<tr><td><code>avatar</code></td><td>a blocky 3D avatar that draws itself, blinks and smiles</td></tr>
+<tr><td><code>handwritten</code></td><td><code>target/handwritten.png</code>, typeset vs handwritten formulas</td></tr>
+<tr><td><code>occlusion</code></td><td><code>target/occlusion.png</code>, stacking and overlap</td></tr>
+<tr><td><code>intro</code></td><td><code>docs/media/intro.mp4</code>, the intro video</td></tr>
+</table>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span><button>copy</button></div>
+<pre><code data-lang="sh">cargo run --release --example hello</code></pre></div>
+
+<h2 id="agents">Using it with agents</h2>
+<p>The library is designed to be driven by an AI agent. The repo includes a Claude Code skill that teaches the workflow: write a short script, draw a still first, then check the motion from sampled frames, because an agent cannot watch a video. It also bundles the whole API and a table of what each error means.</p>
+<p>Agents working in this repo pick it up automatically. To use it from another project, copy it in:</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span><button>copy</button></div>
+<pre><code data-lang="sh">cp -r .claude/skills/rough-animations ~/.claude/skills/        # for every project
+# or: cp -r .claude/skills/rough-animations &lt;your-project&gt;/.claude/skills/</code></pre></div>
+<p>Two helper scripts let an agent look at what it made:</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span><button>copy</button></div>
+<pre><code data-lang="sh">S=.claude/skills/rough-animations/scripts
+$S/contact-sheet.sh target/out.mp4 1.5 4 target/sheet.png   # every 1.5 s, 4 per row
+$S/frame.sh target/out.mp4 3.2 target/at3.png               # one frame at 3.2 s
+$S/frame.sh target/out.mp4 -0.5 target/end.png              # a negative time counts from the end</code></pre></div>
+<p>On a contact sheet, look for things overlapping or clipped at the edges, text colliding with shapes, an object that never appears, and an unfinished last frame.</p>
+<div class="note"><b>Keep in sync</b> After editing <code>docs/cheatsheet.md</code>, run <code>scripts/sync-skill.sh</code> to refresh the skill's copy. <code>cargo test</code> fails if you forget.</div>
+
+<h2 id="cheat-sheet">Cheat sheet</h2>
+<p>The whole API on one page. A test checks every claim in <code>docs/cheatsheet.md</code> against the real code.</p>
+<table>
+<tr><th>Area</th><th>API</th></tr>
+<tr><td>Solids</td><td><code>cuboid(w,h,d)</code> <code>cube(s)</code> <code>cylinder(r,h)</code> <code>cone(r,h)</code> <code>sphere(r)</code> <code>prism(flat, h)</code></td></tr>
+<tr><td>Flat</td><td><code>circle(r)</code> <code>ellipse(rx,ry)</code> <code>rect(w,h)</code> <code>ngon(n,r)</code> <code>star(n,outer,inner)</code> <code>polygon([(x,y),..])</code></td></tr>
+<tr><td>Booleans</td><td><code>.union(b)</code> <code>.minus(b)</code> <code>.intersect(b)</code> <code>.xor(b)</code></td></tr>
+<tr><td>Other</td><td><code>line(a,b)</code> <code>arrow(a,b)</code> <code>label("..")</code> <code>title("..")</code> <code>text("..")</code> <code>math(r"..")?</code> <code>latex("..")?</code></td></tr>
+<tr><td>Builders</td><td><code>.at</code> <code>.base_at</code> <code>.fill</code> <code>.stroke</code> <code>.color</code> <code>.opacity</code> <code>.stroke_width</code> <code>.rotated</code> <code>.scaled</code> <code>.layer</code> <code>.hidden</code> <code>.shift</code> <code>.on</code></td></tr>
+<tr><td>Text</td><td><code>.font_size</code> <code>.tracking</code> <code>.animate</code> <code>.handwritten</code> <code>.solid</code> <code>.hatched</code></td></tr>
+<tr><td>Appear</td><td><code>create</code> <code>write</code> <code>fade_in</code> / <code>uncreate</code> <code>fade_out</code></td></tr>
+<tr><td>Move</td><td><code>move_to</code> <code>move_by</code> <code>move_from</code></td></tr>
+<tr><td>Change</td><td><code>rotate_to/by</code> <code>scale_to</code> <code>opacity_to</code> <code>fill_to</code> <code>stroke_to</code></td></tr>
+<tr><td>Shape</td><td><code>morph</code> <code>transform_into</code></td></tr>
+<tr><td>Tweak</td><td><code>.duration</code> <code>.ease</code> <code>.delay</code> <code>.then</code> <code>.with</code></td></tr>
+<tr><td>Group</td><td><code>all</code> <code>seq</code> <code>lag</code> <code>write_all</code> <code>create_all</code> <code>clear</code></td></tr>
+<tr><td>Stage</td><td><code>new</code> <code>.fps</code> <code>.background</code> <code>.origin</code> <code>.zoom</code> <code>.wobble</code> <code>.sketch</code> / <code>add</code> <code>play</code> <code>wait</code> <code>render</code> <code>pixel</code></td></tr>
+<tr><td>Layout</td><td><code>put</code> <code>tag</code> <code>heading</code> <code>screen</code> <code>dimensions</code></td></tr>
+</table>
+<p>Lower-level control (<code>Scene</code>, <code>Region</code>, custom <code>Geometry</code>, <code>Stage::with</code>) lives in the modules, not the prelude.</p>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+<table>
+<tr><th>You see</th><th>Cause and fix</th></tr>
+<tr><td>panic <code>unknown colour "..."</code></td><td>Not a palette name. Use one from <a href="#colors">Colours</a> or <code>"#rrggbb"</code>.</td></tr>
+<tr><td>panic <code>on(): only flat shapes ...</code></td><td><code>.on(plane)</code> is for flat shapes and text, not solids.</td></tr>
+<tr><td>panic <code>boolean operations need flat shapes</code></td><td><code>union</code>/<code>minus</code>/... work on <code>circle</code>, <code>rect</code>, ... Extrude the result with <code>prism</code>.</td></tr>
+<tr><td><code>this Stage has already played</code></td><td>A stage plays once. Build a fresh one per video; a <code>.png</code> may follow a video.</td></tr>
+<tr><td><code>ffmpeg not found</code></td><td>Install ffmpeg for mp4, webm and gif. PNG output works without it.</td></tr>
+<tr><td><code>LaTeX error: Undefined control sequence</code></td><td>A macro is misspelled. <code>math</code> needs <code>pdflatex</code> plus <code>pdftocairo</code> or <code>mutool</code>.</td></tr>
+<tr><td>Object drawn in the wrong depth order</td><td>Solids that pass through each other are sorted by their centres. Keep them apart.</td></tr>
+<tr><td>A title lands in the middle of the scene</td><td><code>s.add(title(..))</code> goes top-centre only when you give no <code>.at(..)</code>.</td></tr>
+<tr><td>A render is slow</td><td>Use <code>--release</code>.</td></tr>
+</table>
+
+<h2 id="limitations">Limitations</h2>
+<ul>
+<li>The camera is isometric only. No perspective and no camera animation, only a fixed zoom and origin.</li>
+<li>Booleans work on flat shapes. Extrude a combined shape to get a solid with holes; there are no 3D booleans.</li>
+<li>Ordering is exact for boxes and approximate for the rest. A concave extruded shape can order its own walls imperfectly, and solids that pass through each other are sorted by their centres.</li>
+<li>Upright text labels are always drawn on top, even if the thing they label is partly hidden.</li>
+<li>A <code>Stage</code> plays once, so build a fresh one for each video.</li>
+<li>LaTeX goes through <code>pdflatex</code> and a PDF to SVG converter. There is no <code>dvisvgm</code> route yet.</li>
+<li>Text uses plain glyph advances, with no kerning.</li>
+</ul>
+
+<h3 id="how-it-works">How it works, briefly</h3>
+<p>Shapes become polygons, and <a href="https://crates.io/crates/roughr">roughr</a> turns them into wobbly strokes and hatched fills, rasterised by <a href="https://crates.io/crates/tiny-skia">tiny-skia</a>. Objects are ordered on their 3D bounding boxes, and filled shapes first paint an opaque patch of paper colour so nearer shapes hide the lines behind them. Booleans and morphing work on 2D regions through <a href="https://crates.io/crates/i_overlay">i_overlay</a>.</p>
+
+<div class="pager"><a href="index.html"><small>← Back</small>Landing page</a><a href="#quick-start"><small>Top</small>Quick start ↑</a></div>
+</article>
+
+<aside class="toc"><div><h4>On this page</h4></div></aside>
+</div>
+
+<script src="site.js"></script>
+</body>
+</html>

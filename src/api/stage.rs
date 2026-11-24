@@ -248,14 +248,11 @@ impl Stage {
         Ok(())
     }
 
-    /// Save the final frame as a PNG.
+    /// Save the final frame as a PNG. It can follow a video rendered from the same stage: a
+    /// video's last frame can land a moment past the end of the script, and the scene looks the
+    /// same at any time from the end on.
     pub fn still(&mut self, path: impl AsRef<Path>) -> Result {
-        let end = self.duration();
-        if end < self.played_to {
-            return Err(Error::Invalid(
-                "the stage already played past the end".to_string(),
-            ));
-        }
+        let end = self.duration().max(self.played_to);
         if let Some(parent) = path.as_ref().parent().filter(|p| !p.as_os_str().is_empty()) {
             std::fs::create_dir_all(parent)?;
         }
@@ -739,6 +736,22 @@ mod tests {
         assert_eq!((s.width, s.height, s.fps), (900, 600, 30));
         let s = Stage::new(0, -5); // nonsense is clamped, never a zero-size canvas
         assert_eq!((s.width, s.height), (1, 1));
+    }
+
+    #[test]
+    fn a_png_can_follow_playback_that_ran_a_little_past_the_end() {
+        // A 0.33 s script at 10 fps has frames at 0.0, 0.1, 0.2, 0.3 and 0.4: the last one is
+        // past the end. This is what rendering a video does, and a final-frame PNG must still work.
+        let mut s = Stage::new(80, 60).fps(10);
+        let c = s.add(cube(10));
+        s.play(create(c).duration(0.33));
+        s.seek(0.4);
+        let png = temp("past-the-end.png");
+        s.still(&png).unwrap();
+        let img = Pixmap::load_png(&png).unwrap();
+        assert_eq!((img.width(), img.height()), (80, 60));
+        // And the scene in it is the finished one.
+        assert_eq!(s.scene.get(c).unwrap().style.reveal, 1.0);
     }
 
     #[test]

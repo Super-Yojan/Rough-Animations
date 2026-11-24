@@ -1,0 +1,10 @@
+{
+  "name": "rough-animations",
+  "description": "Make hand-drawn style 3D and 2D animations, diagrams and videos in Rust with the rough-animations library, and check the result from sampled frames.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Super-Yojan"
+  },
+  "repository": "https://github.com/Super-Yojan/rough-animations",
+  "keywords": ["animation", "rust", "manim", "isometric", "latex", "video"]
+}

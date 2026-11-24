@@ -12,3 +12,6 @@ euclid = "0.22.14"
 i_overlay = "9.2.0"
 ttf-parser = "0.25.1"
 usvg = { version = "0.50.0", default-features = false }
+
+[dev-dependencies]
+serde_json = "1.0.154"

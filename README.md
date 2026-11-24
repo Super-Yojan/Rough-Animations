@@ -5,6 +5,8 @@ Write a short script, get an mp4, gif or png that looks like it was sketched on 
 
 ![An isometric scene being sketched into place](docs/media/hero.gif)
 
+📖 **[Documentation site](https://super-yojan.github.io/rough-animations/)**
+
 ▶ **[Watch the one-minute intro](docs/media/intro.mp4)**, which was made with the library itself
 (`cargo run --release --example intro`).
 
@@ -155,9 +157,55 @@ Run any of them with `cargo run --release --example <name>`:
 | `shapes` | `target/shapes.png` and `target/booleans.png` |
 | `morph` | `target/morph.mp4`, shapes and solids morphing |
 | `text` | `target/text.mp4` and `.png`, labels and a formula |
+| `avatar` | `target/avatar.mp4` and `.png`, a blocky 3D avatar that draws itself, blinks and smiles |
 | `handwritten` | `target/handwritten.png`, typeset and handwritten formulas side by side |
 | `occlusion` | `target/occlusion.png`, stacking and overlap |
 | `intro` | `docs/media/intro.mp4`, the intro video |
+
+## Using it with AI agents
+
+The library is designed to be easy for an agent to drive, and the repo includes a
+[skill](skills/rough-animations/SKILL.md) that teaches the workflow: write a short script, draw a still
+first, then check the motion from sampled frames (an agent can't watch a video). It also bundles the whole API
+(the cheat sheet) and a table of what each error means, plus two helper scripts, `contact-sheet.sh` (tiles
+frames from across a video into one image) and `frame.sh` (saves a single frame).
+
+### Install the skill
+
+**Claude Code**, as a plugin:
+
+```text
+/plugin install rough-animations --marketplace Super-Yojan/rough-animations
+```
+
+or in two steps, on older versions:
+
+```text
+/plugin marketplace add Super-Yojan/rough-animations
+/plugin install rough-animations@rough-animations
+```
+
+**Any agent**, with one line. It downloads the skill and puts it in `~/.claude/skills`:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Super-Yojan/rough-animations/main/scripts/install-skill.sh | bash
+```
+
+| Add this after `bash -s --` | To |
+|---|---|
+| `--project` | install for the current project only (`./.claude/skills`) |
+| `--dir PATH` | install into `PATH/rough-animations`, for any agent that reads `SKILL.md` folders (give the folder that agent loads skills from) |
+| `--ref NAME` | install a particular branch or tag |
+| `--uninstall` | remove it again |
+
+For example: `curl -fsSL .../install-skill.sh | bash -s -- --dir ~/my-agent/skills`. Running it again updates the
+skill in place. It needs `bash`, `curl` and `tar` (on Windows, use WSL or Git Bash).
+
+**By hand**: copy the [`skills/rough-animations`](skills/rough-animations) folder into your agent's skills folder.
+
+Agents working inside a clone of this repo get the skill automatically (`.claude/skills/rough-animations` links
+to the same folder). After editing `docs/cheatsheet.md`, run `scripts/sync-skill.sh` to refresh the skill's copy;
+`cargo test` fails if you forget.
 
 ## How it works
 
@@ -202,13 +250,16 @@ src/
 examples/      runnable scripts (see above)
 tests/         checks that the cheat sheet matches the code
 docs/          the cheat sheet and the media used in this README
+skills/        the agent skill (SKILL.md and scripts to inspect rendered videos); .claude/skills links here
+.claude-plugin/ the plugin and marketplace manifests that make it installable in Claude Code
+scripts/       install-skill.sh (one-line installer) and sync-skill.sh (keeps the skill's API in step with the cheat sheet)
 assets/        the bundled handwriting font
 ```
 
 ## Development
 
 ```sh
-cargo test       # unit tests, the cheat-sheet checks, and every code block in this README
+cargo test       # unit tests, cheat-sheet, skill and installer checks, and every code block in this README and the skill
 cargo doc --open
 ```
 

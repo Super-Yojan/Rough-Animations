@@ -12,6 +12,11 @@
 #[doc = include_str!("../README.md")]
 struct ReadmeDoctests;
 
+// The agent skill embeds the cheat sheet, so its code blocks are checked the same way.
+#[cfg(doctest)]
+#[doc = include_str!("../skills/rough-animations/SKILL.md")]
+struct SkillDoctests;
+
 pub mod animation;
 pub mod api;
 pub mod planar;

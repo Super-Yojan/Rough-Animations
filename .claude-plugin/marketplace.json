@@ -1,0 +1,15 @@
+{
+  "name": "rough-animations",
+  "description": "Skills for making hand-drawn style 3D and 2D animations in Rust with the rough-animations library.",
+  "owner": {
+    "name": "Super-Yojan"
+  },
+  "plugins": [
+    {
+      "name": "rough-animations",
+      "source": "./",
+      "description": "A skill for making hand-drawn style 3D and 2D animations in Rust with the rough-animations library.",
+      "version": "0.1.0"
+    }
+  ]
+}
