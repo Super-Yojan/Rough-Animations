@@ -1,0 +1,29 @@
+#![doc = include_str!("../docs/cheatsheet.md")]
+//!
+//! ---
+//!
+//! Module layout: [`api`] (the `Stage` and shape/animation builders behind the prelude), [`world`]
+//! (scene graph), [`primitives`] (solids, flat shapes, text), [`planar`] (2D regions and booleans),
+//! [`text`] (fonts and LaTeX as outlines), [`animation`] (tweens, easing, morphing), [`render`]
+//! (cameras, video export).
+
+pub mod animation;
+pub mod api;
+pub mod planar;
+pub mod prelude;
+pub mod primitives;
+pub mod render;
+pub mod text;
+pub mod world;
+
+pub use animation::{Animation, Easing};
+pub use api::{Error, Result, Sketch, Stage};
+pub use planar::Region;
+pub use primitives::Geometry;
+pub use render::camera::IsoCamera;
+pub use render::export::{VideoFormat, VideoOptions};
+pub use world::arena::Id;
+pub use world::object::Object;
+pub use world::scene::Scene;
+pub use world::style::Style;
+pub use world::transform::{Transform, Vec3};

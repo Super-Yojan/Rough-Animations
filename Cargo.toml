@@ -1,0 +1,14 @@
+[package]
+name = "rough-animations"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+roughr = "0.14"
+rough_tiny_skia = "0.14"
+palette = "0.7"
+tiny-skia = "0.11"
+euclid = "0.22.14"
+i_overlay = "9.2.0"
+ttf-parser = "0.25.1"
+usvg = { version = "0.50.0", default-features = false }
