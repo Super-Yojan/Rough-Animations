@@ -41,7 +41,7 @@ impl Geometry for Sphere {
     fn draw(&self, ctx: &mut DrawCtx, t: &Transform, style: &Style) {
         let center = ctx.project(t.position);
         let mean_scale = (t.scale.x + t.scale.y + t.scale.z) / 3.0;
-        let r = self.radius * mean_scale * ISO_SCALE;
+        let r = self.radius * mean_scale * ISO_SCALE * ctx.camera.scale;
 
         let outline: Vec<_> = (0..SEGMENTS)
             .map(|i| {

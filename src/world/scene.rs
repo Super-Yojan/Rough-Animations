@@ -221,7 +221,7 @@ impl Scene {
             }
             // Pass 2: the ink. Seeds depend only on this pass, so strokes don't change.
             ctx.pass = Pass::Ink;
-            ctx.seed = stroke_seed(id, wobble_step);
+            ctx.seed = stroke_seed(id, if o.geometry.wobbles() { wobble_step } else { 0 });
             ctx.draw_count = 0;
             o.geometry.draw(&mut ctx, &o.transform, &o.style);
         }

@@ -5,6 +5,7 @@ use crate::render::export::{VideoEncoder, VideoFormat, VideoOptions};
 use crate::world::arena::Id;
 use crate::world::object::Object;
 use crate::world::scene::Scene;
+use crate::world::transform::Vec3;
 use std::collections::HashSet;
 use std::path::Path;
 use tiny_skia::{Color, Pixmap};
@@ -90,6 +91,21 @@ impl Stage {
         camera.origin_x = x.f32();
         camera.origin_y = y.f32();
         self
+    }
+
+    /// Zoom the camera: `zoom(1.5)` makes everything 50% bigger on screen around the origin.
+    /// Line widths and text sizes are not affected. Set `origin` first if you move it.
+    pub fn zoom(mut self, factor: impl Num) -> Self {
+        self.scene.camera_mut().scale = factor.f32().max(0.01);
+        self
+    }
+
+    /// The floor point `(x, 0, z)` that appears at screen pixel `(x, y)`, measured from the
+    /// top-left of the canvas. Use it to place text exactly:
+    /// `text("Title").at(s.pixel(640, 80))`. Call it after `origin` and `zoom`.
+    pub fn pixel(&self, x: impl Num, y: impl Num) -> Vec3 {
+        let (wx, wy, wz) = self.scene.camera().unproject_floor(x.f32(), y.f32());
+        Vec3::new(wx, wy, wz)
     }
 
     /// Change how hand-drawn everything looks.
@@ -545,6 +561,21 @@ mod tests {
         assert_eq!(s.background, Color::from_rgba8(0, 0, 0, 255));
         assert_eq!((s.scene.camera().origin_x, s.scene.camera().origin_y), (10.0, 20.0));
         assert_eq!(s.wobble_fps, Some(8.0));
+    }
+
+    #[test]
+    fn zoom_and_pixel_place_things_on_screen() {
+        let s = Stage::new(1280, 720).zoom(1.6).origin(640, 432);
+        assert_eq!(s.scene.camera().scale, 1.6);
+        // `pixel` is the inverse of the camera's projection on the floor.
+        let w = s.pixel(200, 100);
+        let p = s.scene.camera().project(w.x, w.y, w.z);
+        assert!((p.x - 200.0).abs() < 1e-3 && (p.y - 100.0).abs() < 1e-3, "{p:?}");
+        // Zoom changes how big things look, not their world size.
+        let mut z = Stage::new(400, 400).zoom(2);
+        let c = z.add(cube(10).base_at((0, 0, 0)));
+        let b = z.scene.get(c).unwrap().bounds();
+        assert_eq!(b.max.y - b.min.y, 10.0);
     }
 
     #[test]

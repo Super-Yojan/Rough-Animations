@@ -4,11 +4,16 @@
 //! normal rough-drawing path can ink them and animations can write them letter by letter.
 
 mod flatten;
+pub mod handwriting;
 pub mod font;
 pub mod tex;
 
 pub use font::{Align, Font, FontError};
 pub use tex::{TexError, TexOptions};
+
+/// Extra space after each letter, in ems, that [`Text`](crate::primitives::Text) adds by default so
+/// handwriting-style glyphs stay distinct.
+pub const DEFAULT_TRACKING: f32 = 0.06;
 
 use crate::planar::{Point2, Region};
 

@@ -46,6 +46,11 @@ fn every_shape_and_builder_on_the_sheet_exists_and_chains() {
             .hidden();
         s.add(o);
     }
+    // Text builders (and they are harmless on shapes).
+    s.add(text("t").font_size(30).tracking(0.1).animate().solid().hatched());
+    s.add(text("t").stroke_width(1));
+    s.add(text("t").handwritten().animate().tracking(0.1));
+    s.add(cube(10).tracking(0.1).animate().handwritten());
     // Builders with narrower targets.
     s.add(circle(10).shift(1, 2).on(Plane::Front));
     s.add(text("t").font_size(30).on(Plane::Ground));
@@ -119,6 +124,13 @@ fn the_stage_builders_named_on_the_sheet_exist() {
         .wobble(8)
         .sketch(Sketch::clean());
     assert_eq!(s.fps, 24);
+    // `zoom` and `pixel`: text put at a pixel really lands on that pixel.
+    let s = Stage::new(1280, 720).zoom(1.4);
+    let w = s.pixel(640, 80);
+    let p = s.scene.camera().project(w.x, w.y, w.z);
+    assert!((p.x - 640.0).abs() < 1e-3 && (p.y - 80.0).abs() < 1e-3);
+    let mut s = s;
+    s.add(text("Title").at(s.pixel(640, 80)));
     // Sketch::default() exists too, and a custom roughness chains.
     let _ = Stage::new(10, 10).sketch(Sketch::default().roughness(2.0));
 }
@@ -291,4 +303,5 @@ fn latex_functions_work_when_installed() {
     let mut s = Stage::new(200, 100);
     s.add(math(r"\frac12").unwrap().font_size(30));
     s.add(latex(r"\textbf{Bold} and $x^2$").unwrap());
+    s.add(math(r"\frac12").unwrap().handwritten());
 }

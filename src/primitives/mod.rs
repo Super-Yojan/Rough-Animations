@@ -106,6 +106,22 @@ impl DrawCtx<'_, '_> {
         }
     }
 
+    /// Fill contours exactly (no roughness, no randomness) with a flat colour. Used for crisp
+    /// text. Does nothing in the underlay pass.
+    pub fn fill_exact(&mut self, contours: &[Vec<Point2D<f32>>], color: Color) {
+        if self.pass == Pass::Ink {
+            underlay::fill_contours(self.pixmap, contours, color);
+        }
+    }
+
+    /// Stroke contours exactly with a flat colour and round joins, `width` pixels thick. Used
+    /// for the pen weight of handwritten text. Does nothing in the underlay pass.
+    pub fn stroke_exact(&mut self, contours: &[Vec<Point2D<f32>>], color: Color, width: f32) {
+        if self.pass == Pass::Ink {
+            underlay::stroke_contours(self.pixmap, contours, color, width);
+        }
+    }
+
     /// Draw several closed contours as one even-odd shape, so inner contours become holes.
     pub fn rough_path(
         &mut self,
@@ -180,6 +196,22 @@ pub trait Geometry {
     /// Change the text size. Ignored by anything that isn't text.
     fn set_font_size(&mut self, _size: f32) {}
 
+    /// Change the letter spacing of plain text, in ems. Ignored by anything else.
+    fn set_tracking(&mut self, _tracking: f32) {}
+
+    /// Make text (and LaTeX) look handwritten, `strength` times the normal amount (0 = off).
+    /// Ignored by anything that isn't text.
+    fn set_handwritten(&mut self, _strength: f32) {}
+
+    /// Turn on the lively hand-drawn mode of text. Ignored by anything that isn't text.
+    fn set_lively(&mut self, _lively: bool) {}
+
+    /// Whether the scene's wobble ("boiling lines") redraws this geometry's strokes. Text is
+    /// steady unless it is made lively.
+    fn wobbles(&self) -> bool {
+        true
+    }
+
     /// Draw layer: lower layers are drawn first, whatever their position. Almost everything is
     /// layer 0 and is ordered by its 3D bounds; screen-space labels use 1 so they stay on top.
     fn layer(&self) -> i32 {
@@ -210,6 +242,12 @@ mod tests {
         for o in objects {
             scene.add(o);
         }
+        let mut pm = Pixmap::new(300, 300).unwrap();
+        scene.render(&mut pm.as_mut());
+        pm
+    }
+
+    fn render_scene(scene: &Scene) -> Pixmap {
         let mut pm = Pixmap::new(300, 300).unwrap();
         scene.render(&mut pm.as_mut());
         pm
@@ -262,6 +300,19 @@ mod tests {
         for extent in [(x1 - x0) as f32, (y1 - y0) as f32] {
             assert!((extent - expect).abs() < 6.0, "extent {extent}, expected ~{expect}");
         }
+    }
+
+    #[test]
+    fn zoom_enlarges_a_sphere_with_the_rest_of_the_scene() {
+        let diameter = |zoom: f32| {
+            let mut scene = Scene::new(IsoCamera::new(150.0, 150.0), Options::default());
+            scene.camera_mut().scale = zoom;
+            scene.add(Sphere::new(30.).at([0., 0., 0.]));
+            let (x0, _, x1, _) = bbox(&render_scene(&scene));
+            (x1 - x0) as f32
+        };
+        let (a, b) = (diameter(1.0), diameter(2.0));
+        assert!((b / a - 2.0).abs() < 0.1, "{a} -> {b}");
     }
 
     #[test]

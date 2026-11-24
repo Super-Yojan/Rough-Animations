@@ -18,7 +18,7 @@ fn build() -> Stage {
         s.add(text("storage").font_size(26).at((160, 138, 50))),
         s.add(text("gateway").font_size(26).at((40, 108, 235))),
     ];
-    let title = s.add(text("System architecture").font_size(44).color("#3c3278").at((100, 330, 100)));
+    let title = s.add(text("System architecture").font_size(44).color("#3c3278").animate().at((100, 330, 100)));
     // A caption lying on the slab, in the same plane.
     let floor = s.add(text("platform").font_size(36).on(Plane::Ground).color("#5a5a6e").at((100, 20, 205)));
     let formula = math(r"\text{latency} \approx \sum_{i=1}^{n} \frac{d_i}{v_i}")

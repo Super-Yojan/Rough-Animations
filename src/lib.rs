@@ -7,6 +7,11 @@
 //! [`text`] (fonts and LaTeX as outlines), [`animation`] (tweens, easing, morphing), [`render`]
 //! (cameras, video export).
 
+// Compile-check every Rust code block in the README as a doctest, so it can't drift from the API.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+struct ReadmeDoctests;
+
 pub mod animation;
 pub mod api;
 pub mod planar;

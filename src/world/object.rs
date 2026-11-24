@@ -4,6 +4,7 @@ use crate::primitives::{Geometry, Plane};
 use crate::world::bounds::Aabb;
 use crate::world::style::Style;
 use crate::world::transform::Transform;
+use roughr::core::FillStyle;
 
 /// A thing in the scene: a geometry plus the properties animations will drive.
 pub struct Object {
@@ -108,6 +109,43 @@ impl Object {
     /// Text size (one em), in pixels for upright labels. No effect on other objects.
     pub fn font_size(mut self, size: impl Num) -> Self {
         self.geometry.set_font_size(size.f32());
+        self
+    }
+
+    /// Letter spacing of plain text, in ems (default 0.06; 0 is the font's own spacing).
+    /// No effect on other objects or on LaTeX.
+    pub fn tracking(mut self, tracking: impl Num) -> Self {
+        self.geometry.set_tracking(tracking.f32());
+        self
+    }
+
+    /// Give text the lively hand-drawn look: a wobbling outline and fill that are written with a
+    /// pen stroke, redrawn with the stage's `wobble`. It is lovely on a big title and harder to
+    /// read at small sizes, so text is crisp and steady unless you ask. No effect on other
+    /// objects.
+    pub fn animate(mut self) -> Self {
+        self.geometry.set_lively(true);
+        self
+    }
+
+    /// Make text or a LaTeX formula look handwritten: letters are slightly wobbly, each turned
+    /// and sized a little differently, the line drifts, and a pen's thickness is added. It is
+    /// steady (nothing flickers) and stays readable. Works on `text(..)`, `math(..)` and
+    /// `latex(..)`; no effect on other objects.
+    pub fn handwritten(mut self) -> Self {
+        self.geometry.set_handwritten(1.0);
+        self
+    }
+
+    /// Fill with flat colour (the default for text).
+    pub fn solid(mut self) -> Self {
+        self.style.fill_style = Some(FillStyle::Solid);
+        self
+    }
+
+    /// Fill with sketchy hatching, as shapes do by default.
+    pub fn hatched(mut self) -> Self {
+        self.style.fill_style = None;
         self
     }
 

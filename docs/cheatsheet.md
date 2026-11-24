@@ -33,7 +33,7 @@ on `p`** instead. Rotations are radians: `deg(90)`.
 
 Builders: `.at(p)` `.base_at(p)` `.fill(c)` `.stroke(c)` `.color(c)` (fill+stroke) `.opacity(0..1)`
 `.stroke_width(w)` `.rotated(r)` `.scaled(s)` `.layer(n)` `.hidden()`, flat shapes: `.shift(dx,dy)` `.on(plane)`,
-text: `.font_size(n)`. Colours: `"purple"` `"mint"` `"amber"` `"sky"` `"rose"` `"gold"` `"slate"` `"ink"`
+text: `.font_size(n)` `.tracking(em)` (letter spacing, default 0.06) `.animate()` `.handwritten()` (see below). Colours: `"purple"` `"mint"` `"amber"` `"sky"` `"rose"` `"gold"` `"slate"` `"ink"`
 `"red"` `"green"` `"blue"` `"orange"` `"yellow"` `"pink"` `"teal"` `"brown"` `"gray"` `"black"` `"white"`,
 `"#a882ff"`, or `(r, g, b)`. A wrong name panics and lists the valid ones.
 
@@ -49,14 +49,23 @@ Tweak: `.duration(secs)` (total length) `.ease(Easing::BackOut)` `.delay(secs)` 
 Group (no boxing): `all([a,b])` together, `seq([a,b])` in order, `lag(0.3, [a,b,c])` staggered.
 
 ## Stage
-`Stage::new(w,h)` then optional `.fps(n)` `.background(c)` `.origin(x,y)` `.wobble(fps)` (boiling lines)
-`.sketch(Sketch::clean())`. `s.add(obj) -> Id`, `s.play(anim)`, `s.wait(secs)`, `s.render(path)`.
+`Stage::new(w,h)` then optional `.fps(n)` `.background(c)` `.origin(x,y)` `.zoom(f)` (bigger scene, same line
+widths and text) `.wobble(fps)` (boiling lines) `.sketch(Sketch::clean())`. `s.add(obj) -> Id`, `s.play(anim)`,
+`s.wait(secs)`, `s.render(path)`. **`s.pixel(x, y)`** is the floor point under a screen pixel, so
+`text("Title").at(s.pixel(640, 80))` puts text exactly there (call it after `origin`/`zoom`).
 
 ## Gotchas
 - `create`/`write`/`fade_in` hide their object until they start, so just `add` it (likewise the target of
   `transform_into`). Other animations don't.
 - A `Stage` plays **once**: build a fresh one per video. A `.png` (last frame) can follow a video from the same
   stage, but a video after a `.png` is an error.
+- Text is crisp and steady by default (solid fill, no wobble, written on with a wipe). `.animate()` gives it the
+  lively hand-drawn wobble, which looks great on a big title and is hard to read when small. `.solid()` and
+  `.hatched()` switch the fill; `.stroke_width(w)` adds a sketchy outline.
+- `.handwritten()` makes text, `math(..)` or `latex(..)` look written by hand: wobbly, slightly uneven letters, a
+  drifting baseline and a pen's weight. It is steady (no flicker) and stays readable, even small. Plain LaTeX is
+  crisp typeset math. Combine freely with `.animate()`, `.tracking()` and colours.
+- `.duration()` is the *total* length
 - `.duration()` is the *total* length, so put `.delay()` after it. `.ease()` only affects single animations.
 - Nearer objects hide those behind them automatically; stack with `base_at` using the lower object's top y.
 - `.mp4`/`.webm`/`.gif` need `ffmpeg`; `math`/`latex` need `pdflatex` plus `pdftocairo` or `mutool`.
