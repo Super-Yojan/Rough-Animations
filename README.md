@@ -1,4 +1,4 @@
-# rough-animations
+# Rough-Animations
 
 **Hand-drawn 3D and 2D animations in Rust, in the spirit of [manim](https://www.manim.community/).**
 Write a short script, get an mp4, gif or png that looks like it was sketched on a whiteboard.
