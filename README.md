@@ -184,6 +184,10 @@ fn main() -> Result {
 second for a "boiling line" cartoon feel. `.theme("dark")` changes the page and the default colours together;
 `.background(..)` on its own changes only the page, so on a dark page use a theme or the dark ink will vanish.
 
+For a figure in a slide or document, `Stage::new(..).transparent()` leaves the page see-through and
+`s.still_cropped("figure.png", 16)` saves the final frame trimmed to the drawing (see `examples/figure.rs`). PNG and GIF
+keep the transparency; `.mp4` and `.webm` cannot and say so.
+
 ![The same formulas typeset (left) and made handwritten (right)](docs/media/handwritten.png)
 
 `.handwritten()` bends every outline gently, turns and sizes each letter a little differently, lets the line

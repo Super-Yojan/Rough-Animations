@@ -120,6 +120,7 @@ let top = s.add(cube(60).base_at((0, 40, 0)).fill("amber"));</code></pre></div>
 <tr><td><code>Stage::new(w, h)</code></td><td>A canvas in pixels, with the sketch look and isometric camera</td></tr>
 <tr><td><code>.fps(n)</code></td><td>Frames per second of the video</td></tr>
 <tr><td><code>.theme(t)</code></td><td>The page colour plus the default colours of lines, text, titles and captions, e.g. <code>"dark"</code>. See <a href="#themes">Themes</a></td></tr>
+<tr><td><code>.transparent()</code></td><td>No page at all, for figures in slides and documents. See <a href="#transparent">Transparent figures</a></td></tr>
 <tr><td><code>.background(c)</code></td><td>The page colour only. For a dark page use a <a href="#themes">theme</a>, so lines and text change too</td></tr>
 <tr><td><code>.origin(x, y)</code></td><td>Screen pixel where <code>(0,0,0)</code> lands</td></tr>
 <tr><td><code>.zoom(f)</code></td><td>Scale the scene; line widths and text keep their size</td></tr>
@@ -399,6 +400,15 @@ let dark = Theme::by_name("dark");                // Option&lt;Theme&gt;; Theme:
 <pre><code>s.render("target/out.mp4")?;      // video first
 s.render("target/out.png")        // then the last frame, from the same stage</code></pre></div>
 <p>Frames are piped as raw RGBA to ffmpeg. Missing parent directories for a png are created for you.</p>
+
+<h3 id="transparent">Transparent figures for slides and documents</h3>
+<p>Make the page see-through and trim the picture to what you drew, so it sits on any slide background. Shapes in front still hide the lines behind them.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>figure.rs</span><button>copy</button></div>
+<pre><code>let mut s = Stage::new(900, 600).transparent();   // or .theme("dark").transparent()
+s.add(cuboid(90, 90, 90).base_at((0, 0, 0)).fill("mint"));
+s.add(sphere(40).at((100, 20, 70)).fill("rose"));
+s.still_cropped("figure.png", 16)?;               // final frame, trimmed, 16 px of margin</code></pre></div>
+<p>PNG and GIF keep the transparency. <code>.mp4</code> and <code>.webm</code> cannot, and <code>render</code> returns an error saying so rather than filling the page with black. <code>"transparent"</code> and <code>"#rrggbbaa"</code> also work as colours. The ink stays the theme's, so on a dark slide pair it with a dark theme.</p>
 
 <h2 id="recipes">Recipes</h2>
 <h3 id="recipe-scenes">Multi-scene videos</h3>

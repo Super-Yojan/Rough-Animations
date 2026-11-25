@@ -100,6 +100,15 @@ impl Stage {
         self
     }
 
+    /// No page at all: the picture is drawn on a transparent background, for dropping into
+    /// slides and documents. Keeps the theme's ink, so on a dark slide choose a dark-page theme
+    /// first (`.theme("dark").transparent()`). Filled shapes still hide the lines behind them.
+    /// A PNG or GIF keeps the transparency; `.mp4` and `.webm` cannot, and say so.
+    pub fn transparent(mut self) -> Self {
+        self.background = Color::TRANSPARENT;
+        self
+    }
+
     /// Page colour: a name, hex string or `(r, g, b)`.
     pub fn background(mut self, color: impl IntoColor) -> Self {
         self.background = color.into_color();
@@ -265,6 +274,12 @@ impl Stage {
                     .to_string(),
             ));
         }
+        if self.background.alpha() < 1.0 && matches!(VideoFormat::from_path(path), Some(VideoFormat::Mp4 | VideoFormat::Webm)) {
+            return Err(Error::Invalid(format!(
+                "this stage has a transparent background, which {path:?} cannot keep (it would turn black). \
+                 Use .png or .gif, or give the stage a background colour"
+            )));
+        }
         let opts = VideoOptions::fps(self.fps);
         self.render_video(path, &opts)?;
         Ok(())
@@ -281,6 +296,26 @@ impl Stage {
         self.render_frame(end)
             .save_png(path.as_ref())
             .map_err(std::io::Error::other)?;
+        Ok(())
+    }
+
+    /// Save the final frame as a PNG trimmed to what was drawn, plus `padding` pixels all round
+    /// (where the canvas has room). This is what you want for a figure in a slide or document:
+    /// no empty margins. Pair it with [`transparent`](Self::transparent) for a figure that sits
+    /// on any background.
+    ///
+    /// Fails if nothing was drawn.
+    pub fn still_cropped(&mut self, path: impl AsRef<Path>, padding: impl Num) -> Result {
+        let end = self.duration().max(self.played_to);
+        let frame = self.render_frame(end);
+        let pad = padding.f32().max(0.0).round() as u32;
+        let cropped = crop_to_content(&frame, self.background, pad).ok_or_else(|| {
+            Error::Invalid("nothing is drawn, so there is nothing to crop to".to_string())
+        })?;
+        if let Some(parent) = path.as_ref().parent().filter(|p| !p.as_os_str().is_empty()) {
+            std::fs::create_dir_all(parent)?;
+        }
+        cropped.save_png(path.as_ref()).map_err(std::io::Error::other)?;
         Ok(())
     }
 
@@ -318,6 +353,35 @@ impl Stage {
         }
         Ok(n)
     }
+}
+
+/// The part of `frame` that holds drawing, padded by `pad` pixels and kept inside the canvas.
+/// "Drawing" means pixels that are not transparent (for a transparent page) or that differ
+/// from the page colour. Returns `None` when there is none.
+fn crop_to_content(frame: &Pixmap, page: Color, pad: u32) -> Option<Pixmap> {
+    let (w, h) = (frame.width(), frame.height());
+    let page = page.to_color_u8();
+    let is_content = |p: &tiny_skia::PremultipliedColorU8| {
+        if page.alpha() == 0 {
+            p.alpha() >= 8
+        } else {
+            let d = |a: u8, b: u8| a.abs_diff(b) > 6;
+            d(p.red(), page.red()) || d(p.green(), page.green()) || d(p.blue(), page.blue())
+        }
+    };
+    let (mut x0, mut y0, mut x1, mut y1) = (w, h, 0, 0);
+    for (i, p) in frame.pixels().iter().enumerate() {
+        if is_content(p) {
+            let (x, y) = (i as u32 % w, i as u32 / w);
+            (x0, y0, x1, y1) = (x0.min(x), y0.min(y), x1.max(x), y1.max(y));
+        }
+    }
+    if x1 < x0 || y1 < y0 {
+        return None;
+    }
+    let (x0, y0) = (x0.saturating_sub(pad), y0.saturating_sub(pad));
+    let (x1, y1) = ((x1 + pad).min(w - 1), (y1 + pad).min(h - 1));
+    frame.clone_rect(tiny_skia::IntRect::from_xywh(x0 as i32, y0 as i32, x1 - x0 + 1, y1 - y0 + 1)?)
 }
 
 #[cfg(test)]
@@ -774,6 +838,190 @@ mod tests {
         assert_eq!((img.width(), img.height()), (80, 60));
         // And the scene in it is the finished one.
         assert_eq!(s.scene.get(c).unwrap().style.reveal, 1.0);
+    }
+
+    // ---- transparent output, for slides and documents ---------------------------------
+
+    fn load(path: &std::path::Path) -> Pixmap {
+        Pixmap::load_png(path).unwrap()
+    }
+
+    fn alpha_at(px: &Pixmap, x: u32, y: u32) -> u8 {
+        px.pixel(x, y).unwrap().alpha()
+    }
+
+    #[test]
+    fn a_transparent_stage_writes_a_png_with_a_transparent_page() {
+        let mut s = Stage::new(300, 200).transparent();
+        s.add(cuboid(60, 60, 60).base_at((0, 0, 0)).fill("mint"));
+        s.add(text("Hi").at(s.pixel(150, 30)));
+        let png = temp("transparent.png");
+        s.render(&png).unwrap();
+        let img = load(&png);
+        assert_eq!(alpha_at(&img, 2, 2), 0, "the page is see-through");
+        assert_eq!(alpha_at(&img, 297, 197), 0);
+        let total = img.pixels().len();
+        let clear = img.pixels().iter().filter(|p| p.alpha() == 0).count();
+        let solid = img.pixels().iter().filter(|p| p.alpha() == 255).count();
+        assert!(clear * 10 > total * 7, "most of the picture is transparent ({clear}/{total})");
+        assert!(solid > 100, "and the drawing itself is opaque ink ({solid})");
+    }
+
+    #[test]
+    fn transparent_works_by_name_and_keeps_the_theme() {
+        assert_eq!(Stage::new(10, 10).background("transparent").background, Color::TRANSPARENT);
+        assert_eq!(Stage::new(10, 10).transparent().background, Color::TRANSPARENT);
+        let s = Stage::new(10, 10).theme("dark").transparent();
+        assert_eq!(s.background.alpha(), 0.0);
+        assert_eq!(s.theme.ink, crate::api::Theme::dark().ink, "the dark ink stays, for a dark slide");
+    }
+
+    fn overlapping_scene(s: Stage) -> Pixmap {
+        let mut s = s.origin(150, 200);
+        s.add(cuboid(40, 40, 40).base_at((-40, 0, -40)).fill("blue"));
+        s.add(cuboid(90, 90, 90).base_at((0, 0, 0)).fill("amber"));
+        s.add(sphere(30).at((10, 20, 60)).fill("rose"));
+        let end = s.duration();
+        s.render_frame(end)
+    }
+
+    #[test]
+    fn a_transparent_page_looks_the_same_as_the_opaque_one_once_laid_on_it() {
+        // Lay the transparent render over the page colour: it must equal the opaque render, so
+        // hidden lines stay hidden and nothing else changes.
+        let opaque = overlapping_scene(Stage::new(300, 300));
+        let clear = overlapping_scene(Stage::new(300, 300).transparent());
+        let page = Stage::new(1, 1).background.to_color_u8();
+        let mut worst = 0;
+        for (o, c) in opaque.pixels().iter().zip(clear.pixels()) {
+            let inv = 255 - c.alpha() as u32;
+            let lay = |top: u8, under: u8| (top as u32 + (under as u32 * inv + 127) / 255).min(255) as i32;
+            for (got, want) in [
+                (lay(c.red(), page.red()), o.red()),
+                (lay(c.green(), page.green()), o.green()),
+                (lay(c.blue(), page.blue()), o.blue()),
+            ] {
+                worst = worst.max((got - want as i32).abs());
+            }
+        }
+        assert!(worst <= 3, "transparent and opaque renders differ by up to {worst}");
+        // Control: with hidden-line removal off, the difference would be large.
+        let mut leaky = Stage::new(300, 300).transparent();
+        leaky.scene.paper = None;
+        let leaky = overlapping_scene(leaky);
+        assert_ne!(leaky.data(), clear.data(), "the control should differ from the real render");
+    }
+
+    #[test]
+    fn soft_edges_keep_their_colour_in_the_png() {
+        // Anti-aliased edge pixels must hold the ink colour with partial alpha, not a darkened
+        // version of it, or they leave a dark fringe on a light slide.
+        let mut s = Stage::new(200, 200).transparent();
+        s.add(line((-60, 0, 0), (60, 60, 0)).stroke("#ff8800").stroke_width(5));
+        let png = temp("edges.png");
+        s.render(&png).unwrap();
+        let img = load(&png);
+        let soft: Vec<_> = img
+            .pixels()
+            .iter()
+            .filter(|p| p.alpha() > 40 && p.alpha() < 215)
+            .map(|p| p.demultiply())
+            .collect();
+        assert!(soft.len() > 20, "expected anti-aliased pixels, got {}", soft.len());
+        for c in &soft {
+            assert!(
+                c.red().abs_diff(255) <= 10 && c.green().abs_diff(136) <= 12 && c.blue() <= 12,
+                "edge pixel is {:?}, not the orange it was drawn in",
+                (c.red(), c.green(), c.blue())
+            );
+        }
+    }
+
+    /// The bounding box of non-transparent pixels in `px`.
+    fn content_box(px: &Pixmap) -> (u32, u32, u32, u32) {
+        let (mut x0, mut y0, mut x1, mut y1) = (u32::MAX, u32::MAX, 0, 0);
+        for (i, p) in px.pixels().iter().enumerate() {
+            if p.alpha() >= 8 {
+                let (x, y) = (i as u32 % px.width(), i as u32 / px.width());
+                (x0, y0, x1, y1) = (x0.min(x), y0.min(y), x1.max(x), y1.max(y));
+            }
+        }
+        (x0, y0, x1, y1)
+    }
+
+    #[test]
+    fn still_cropped_trims_to_the_drawing_plus_padding_and_keeps_every_pixel() {
+        let mut s = Stage::new(400, 300).transparent();
+        s.add(cuboid(60, 60, 60).base_at((0, 0, 0)).fill("mint"));
+        let (full, cropped) = (temp("full.png"), temp("cropped.png"));
+        s.render(&full).unwrap();
+        s.still_cropped(&cropped, 10).unwrap();
+        let (f, c) = (load(&full), load(&cropped));
+
+        let (x0, y0, x1, y1) = content_box(&f);
+        let (cx0, cy0) = (x0 - 10, y0 - 10);
+        assert_eq!((c.width(), c.height()), (x1 - x0 + 1 + 20, y1 - y0 + 1 + 20), "content plus 10 px each side");
+        assert!(c.width() < f.width() && c.height() < f.height());
+        // Every pixel is exactly the full render's pixel, shifted.
+        for y in 0..c.height() {
+            for x in 0..c.width() {
+                assert_eq!(c.pixel(x, y), f.pixel(cx0 + x, cy0 + y), "pixel ({x}, {y})");
+            }
+        }
+        // And the trimmed picture touches all four edges' padding: content starts 10 px in.
+        let (bx0, by0, bx1, by1) = content_box(&c);
+        assert_eq!((bx0, by0, c.width() - 1 - bx1, c.height() - 1 - by1), (10, 10, 10, 10));
+    }
+
+    #[test]
+    fn padding_never_goes_outside_the_canvas_and_zero_padding_is_tight() {
+        let mut s = Stage::new(120, 100).transparent().origin(30, 40);
+        s.add(cuboid(40, 40, 40).base_at((0, 0, 0)).fill("rose")); // near the top-left corner
+        let png = temp("corner.png");
+        s.still_cropped(&png, 500).unwrap();
+        let c = load(&png);
+        assert_eq!((c.width(), c.height()), (120, 100), "huge padding is clamped to the canvas");
+
+        s.still_cropped(&png, 0).unwrap();
+        let tight = load(&png);
+        let (x0, y0, x1, y1) = content_box(&tight);
+        assert_eq!((x0, y0, x1 + 1, y1 + 1), (0, 0, tight.width(), tight.height()), "no padding: content fills it");
+    }
+
+    #[test]
+    fn still_cropped_also_works_on_an_opaque_page_and_refuses_an_empty_scene() {
+        let mut s = Stage::new(300, 200);
+        s.add(circle(40).fill("sky"));
+        let png = temp("opaque-cropped.png");
+        s.still_cropped(&png, 8).unwrap();
+        let c = load(&png);
+        assert!(c.width() < 300 && c.height() < 200);
+        assert_eq!(alpha_at(&c, 0, 0), 255, "an opaque page stays opaque");
+
+        let mut empty = Stage::new(100, 100).transparent();
+        let err = empty.still_cropped(temp("none.png"), 5).unwrap_err().to_string();
+        assert!(err.contains("nothing is drawn"), "{err}");
+    }
+
+    #[test]
+    fn videos_that_cannot_be_transparent_say_so_instead_of_turning_black() {
+        let mut s = Stage::new(100, 80).fps(10).transparent();
+        let c = s.add(cube(10));
+        s.play(create(c).duration(0.2));
+        for ext in ["mp4", "webm"] {
+            let err = s.render(temp(&format!("t.{ext}"))).unwrap_err().to_string();
+            assert!(err.contains("transparent") && err.contains(".png"), "{ext}: {err}");
+        }
+        // A png is fine, and a gif keeps its transparency.
+        s.render(temp("t.png")).unwrap();
+        if std::process::Command::new("ffmpeg").arg("-version").output().is_ok() {
+            let mut g = Stage::new(100, 80).fps(10).transparent();
+            let c = g.add(cube(10));
+            g.play(create(c).duration(0.2));
+            let gif = temp("t.gif");
+            g.render(&gif).unwrap();
+            assert!(std::fs::metadata(&gif).unwrap().len() > 100);
+        }
     }
 
     #[test]

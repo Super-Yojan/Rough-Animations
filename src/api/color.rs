@@ -26,7 +26,8 @@ pub const NAMES: &[(&str, (u8, u8, u8))] = &[
     ("white", (255, 255, 255)),
 ];
 
-/// Parse `"#rrggbb"`, `"#rgb"` or a name from [`NAMES`] (case-insensitive).
+/// Parse `"#rrggbb"`, `"#rgb"`, `"#rrggbbaa"` / `"#rgba"` (with alpha), `"transparent"` or a name
+/// from [`NAMES`] (case-insensitive).
 pub fn parse_color(s: &str) -> Option<Color> {
     let s = s.trim();
     if let Some(hex) = s.strip_prefix('#') {
@@ -34,18 +35,24 @@ pub fn parse_color(s: &str) -> Option<Color> {
         return match hex.len() {
             6 => Some(Color::from_rgba8(byte(0, 2)?, byte(2, 2)?, byte(4, 2)?, 255)),
             3 => Some(Color::from_rgba8(byte(0, 1)? * 17, byte(1, 1)? * 17, byte(2, 1)? * 17, 255)),
+            8 => Some(Color::from_rgba8(byte(0, 2)?, byte(2, 2)?, byte(4, 2)?, byte(6, 2)?)),
+            4 => Some(Color::from_rgba8(byte(0, 1)? * 17, byte(1, 1)? * 17, byte(2, 1)? * 17, byte(3, 1)? * 17)),
             _ => None,
         };
     }
     let lower = s.to_ascii_lowercase();
+    if lower == "transparent" {
+        return Some(Color::TRANSPARENT);
+    }
     NAMES
         .iter()
         .find(|(n, _)| *n == lower)
         .map(|&(_, (r, g, b))| Color::from_rgba8(r, g, b, 255))
 }
 
-/// Anything that can be a colour: a name or hex string (`"purple"`, `"#a882ff"`), an
-/// `(r, g, b)` tuple of 0-255 values, or a `tiny_skia::Color`.
+/// Anything that can be a colour: a name or hex string (`"purple"`, `"#a882ff"`, `"#a882ff80"` for
+/// half transparent, `"transparent"`), an `(r, g, b)` tuple of 0-255 values, or a
+/// `tiny_skia::Color`.
 ///
 /// An unknown name panics with the list of valid ones, so a typo fails loudly and immediately.
 pub trait IntoColor {
@@ -100,6 +107,19 @@ mod tests {
         assert_eq!("#fff".into_color(), Color::from_rgba8(255, 255, 255, 255));
         assert_eq!((10, 20, 30).into_color(), Color::from_rgba8(10, 20, 30, 255));
         assert_eq!([10u8, 20, 30].into_color(), (10, 20, 30).into_color());
+    }
+
+    #[test]
+    fn transparent_and_alpha_hex_colours() {
+        assert_eq!("transparent".into_color(), Color::TRANSPARENT);
+        assert_eq!("Transparent".into_color().alpha(), 0.0);
+        assert_eq!("#00000000".into_color(), Color::TRANSPARENT);
+        assert_eq!("#a882ffff".into_color(), "#a882ff".into_color(), "ff alpha is opaque");
+        let half = "#a882ff80".into_color();
+        assert!((half.alpha() - 128.0 / 255.0).abs() < 1e-3);
+        assert_eq!((half.red(), half.green(), half.blue()), ("#a882ff".into_color().red(), "#a882ff".into_color().green(), "#a882ff".into_color().blue()));
+        assert_eq!("#0000".into_color().alpha(), 0.0, "#rgba short form");
+        assert!(parse_color("#12345").is_none(), "5 digits is still rejected");
     }
 
     #[test]

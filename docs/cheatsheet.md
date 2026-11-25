@@ -54,6 +54,10 @@ Lists of ids: `write_all(&ids)` `create_all(&ids)` (staggered), `clear(&ids)` (e
 widths and text) `.wobble(fps)` (boiling lines) `.sketch(Sketch::clean())`. `s.add(obj) -> Id`, `s.play(anim)`,
 `s.wait(secs)`, `s.render(path)`. **`s.pixel(x, y)`** is the floor point under a screen pixel, so
 `text("Title").at(s.pixel(640, 80))` puts text exactly there (call it after `origin`/`zoom`).
+**For slides and documents:** `Stage::new(..).transparent()` leaves the page see-through (shapes still hide the lines
+behind them), and `s.still_cropped("fig.png", 16)` saves the final frame trimmed to the drawing plus 16 px. PNG and GIF
+keep the transparency; `.mp4` and `.webm` cannot, and return an error instead of turning black. `"transparent"` and
+`"#rrggbbaa"` also work as colours. Ink stays the theme's, so for a dark slide use `.theme("dark").transparent()`.
 
 ## Themes
 `Stage::new(w, h).theme("dark")` sets the page colour and the default colours of lines, text, titles and captions

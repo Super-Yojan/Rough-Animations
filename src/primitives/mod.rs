@@ -45,7 +45,8 @@ pub struct DrawCtx<'a, 'b> {
     pub camera: &'a IsoCamera,
     pub base_opts: &'a Options,
     /// Colour of the paper. When set, filled shapes first get an opaque patch of it, so that
-    /// shapes in front hide the lines behind them. `None` leaves fills see-through.
+    /// shapes in front hide the lines behind them. A fully transparent paper erases instead of
+    /// painting, with the same effect. `None` leaves fills see-through.
     pub paper: Option<Color>,
     /// Which pass is running; see [`Pass`].
     pub pass: Pass,
@@ -90,6 +91,13 @@ impl DrawCtx<'_, '_> {
         }
         let reveal = style.reveal.clamp(0.0, 1.0);
         let fade = style.opacity * fill.alpha() * partial::fill_progress(reveal.min(1.0));
+        if paper.alpha() == 0.0 {
+            // A transparent page has no colour to paint, so hide what is behind by erasing it.
+            if fade > 0.0 {
+                underlay::erase_contours(self.pixmap, contours, fade);
+            }
+            return;
+        }
         let mut color = paper;
         color.set_alpha((paper.alpha() * fade).clamp(0.0, 1.0));
         if color.alpha() > 0.0 {
