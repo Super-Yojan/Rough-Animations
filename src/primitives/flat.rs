@@ -98,6 +98,18 @@ impl Geometry for Shape2D {
     }
 
     fn draw(&self, ctx: &mut DrawCtx, transform: &Transform, style: &Style) {
+        // A shape stuck on a wall is only seen from the side it faces, so it disappears when
+        // the camera turns to the back of the thing it is stuck to.
+        let normal = match self.plane {
+            Plane::Ground => None,
+            Plane::Front => Some(Vec3::new(0.0, 0.0, 1.0)),
+            Plane::Side => Some(Vec3::new(1.0, 0.0, 0.0)),
+        };
+        if let Some(n) = normal {
+            if !ctx.camera.faces_viewer(transform.rotate_dir(n)) {
+                return;
+            }
+        }
         let contours: Vec<Vec<_>> = self
             .region
             .contours

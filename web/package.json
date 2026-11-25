@@ -1,0 +1,55 @@
+{
+  "name": "rough-figure",
+  "version": "0.1.0",
+  "description": "Interactive hand-drawn 3D figures for the web, rendered live by the rough-animations Rust engine in WebAssembly.",
+  "type": "module",
+  "sideEffects": [
+    "./dist/element.js"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./element": {
+      "types": "./dist/element.d.ts",
+      "default": "./dist/element.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
+    },
+    "./wasm/*": "./dist/wasm/*",
+    "./figures": {
+      "types": "./dist/figures/index.d.ts",
+      "default": "./dist/figures/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build:wasm": "sh ../scripts/build-web.sh",
+    "build": "tsc -p . && node scripts/copy-wasm.mjs",
+    "typecheck": "tsc -p . --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "demo": "node scripts/serve.mjs"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "react": "^18.3.0",
+    "typescript": "^5.6.0"
+  },
+  "license": "UNLICENSED"
+}

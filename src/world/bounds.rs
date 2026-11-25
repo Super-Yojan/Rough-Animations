@@ -64,9 +64,25 @@ impl Aabb {
     /// `other` in x, y or z, then `t >= 0` for every such pair, so `other` is the nearer one
     /// wherever they overlap on screen.
     pub fn behind(&self, other: &Aabb) -> bool {
-        self.max.x <= other.min.x + EPS
-            || self.max.y <= other.min.y + EPS
-            || self.max.z <= other.min.z + EPS
+        self.behind_from(other, [1.0, 1.0, 1.0])
+    }
+
+    /// Like [`behind`](Self::behind) for a camera whose vector toward the viewer is `v`
+    /// (see `IsoCamera::toward_viewer`). Along each axis the sign of `v` says which side is
+    /// nearer; an axis the view runs square across (`v` near 0) tells us nothing.
+    pub fn behind_from(&self, other: &Aabb, v: [f32; 3]) -> bool {
+        let far = |s_min: f32, s_max: f32, o_min: f32, o_max: f32, v: f32| {
+            if v > 1e-4 {
+                s_max <= o_min + EPS
+            } else if v < -1e-4 {
+                s_min >= o_max - EPS
+            } else {
+                false
+            }
+        };
+        far(self.min.x, self.max.x, other.min.x, other.max.x, v[0])
+            || far(self.min.y, self.max.y, other.min.y, other.max.y, v[1])
+            || far(self.min.z, self.max.z, other.min.z, other.max.z, v[2])
     }
 }
 

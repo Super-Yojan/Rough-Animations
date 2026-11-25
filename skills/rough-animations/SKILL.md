@@ -89,7 +89,7 @@ library and how to check your output; the full API is at the bottom.
 
 ## Limits
 
-The camera is isometric only (a fixed `zoom` and `origin`, no perspective or camera moves). Booleans
+The camera is isometric only (a fixed tilt, `zoom` and `origin`; it can turn about the vertical axis with `yaw`, but there is no perspective and no scripted camera moves). Booleans
 are 2D, with no 3D booleans. Text has no kerning, and upright labels cannot be hidden behind solids.
 
 ## API reference
@@ -175,6 +175,12 @@ parts included; `car.pivot(p)` picks another point), `car.scale_by(2)`. `car.cre
 one after another (3 s at most); `car.fade_in()` `car.fade_out()` `car.opacity_to(a)` `car.uncreate()` act on all at once.
 Each returns an `Anim`, so `.duration()` `.ease()` `.delay()` and `all([..])` work. `s.place(&car, p)` moves it
 instantly, and a group works with `create_all(&car)` and `clear(&car)`.
+
+**Turning, clicking, vectors:** `.yaw(deg(30))` turns the whole scene about the vertical axis (`s.set_yaw(radians)` to
+change it later); solids, hidden-surface order and wall decals follow. `obj.action("open")` names a part, and
+`s.pick(x, y)` returns `Some((id, action))` for the topmost part under a screen pixel. `.pixel_ratio(2.0)` draws for
+high-density screens (pass the device size to `Stage::new`, and scale `zoom`/`origin` by the same ratio).
+`s.to_svg()` returns the current frame as an SVG string (finished frames; a half-drawn shape is written whole).
 
 ## Layout
 `s.put(obj, x, y)` adds `obj` standing on screen pixel `(x, y)` (text and flat shapes are centred there):

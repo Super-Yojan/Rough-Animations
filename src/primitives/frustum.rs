@@ -1,5 +1,5 @@
 use crate::world::bounds::Aabb;
-use crate::primitives::common::{convex_hull, faces_viewer, ring, shading};
+use crate::primitives::common::{convex_hull, ring, shading};
 use crate::primitives::{DrawCtx, Geometry};
 use crate::world::style::{Style, shade};
 use crate::world::transform::{Transform, Vec3};
@@ -39,7 +39,7 @@ fn draw_frustum(
         (&top, Vec3::new(0.0, 1.0, 0.0), r_top),
     ] {
         let n = t.rotate_dir(normal);
-        if radius > 1e-4 && faces_viewer(n) {
+        if radius > 1e-4 && ctx.camera.faces_viewer(n) {
             let fill = style.fill.map(|c| shade(c, shading(n)));
             ctx.rough_polygon(pts, fill, style);
         }

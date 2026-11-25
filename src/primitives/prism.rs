@@ -1,6 +1,6 @@
 use crate::world::bounds::Aabb;
 use crate::planar::{Region, signed_area};
-use crate::primitives::common::{faces_viewer, shading};
+use crate::primitives::common::shading;
 use crate::primitives::flat::Plane;
 use crate::primitives::{DrawCtx, Geometry};
 use crate::world::style::{Style, shade};
@@ -113,7 +113,7 @@ impl Geometry for Prism {
                 let (du, dv) = (b[0] - a[0], b[1] - a[1]);
                 let local = Plane::Ground.to_3d([dv * orient, -du * orient]);
                 let n = t.rotate_dir(local).normalize();
-                let visible = faces_viewer(n);
+                let visible = ctx.camera.faces_viewer(n);
                 vis.push(visible);
                 if visible {
                     sides.push(Face {
@@ -124,9 +124,10 @@ impl Geometry for Prism {
             }
             outlines.push((c, vis));
         }
+        let view = ctx.camera.toward_viewer();
         let depth = |f: &Face| {
             let m = f.pts.iter().fold(Vec3::zero(), |s, p| s + *p) / 4.0;
-            m.x + m.y + m.z
+            crate::primitives::dot(m, view)
         };
         sides.sort_by(|a, b| depth(a).total_cmp(&depth(b)));
 
@@ -143,7 +144,7 @@ impl Geometry for Prism {
 
         // Bottom cap (only if seen from below) first, then wall fills far to near, then the
         // wall outlines, top cap last.
-        if faces_viewer(bottom_n) {
+        if ctx.camera.faces_viewer(bottom_n) {
             let fill = style.fill.map(|c| shade(c, shading(bottom_n)));
             ctx.rough_path(&bottom_cap, fill, style);
         }
@@ -198,7 +199,7 @@ impl Geometry for Prism {
             }
         }
 
-        if faces_viewer(top_n) {
+        if ctx.camera.faces_viewer(top_n) {
             let fill = style.fill.map(|c| shade(c, shading(top_n)));
             ctx.rough_path(&top_cap, fill, style);
         }

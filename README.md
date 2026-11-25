@@ -214,7 +214,32 @@ Run any of them with `cargo run --release --example <name>`:
 | `themes` | `target/themes.png`, the same scene in all six built-in themes |
 | `handwritten` | `target/handwritten.png`, typeset and handwritten formulas side by side |
 | `occlusion` | `target/occlusion.png`, stacking and overlap |
+| `turn` | `target/turn-0.png` ... `turn-3.png`, one scene seen from four turns of the camera |
 | `intro` | `docs/media/intro.mp4`, the intro video |
+
+## On the web
+
+The same engine runs live in the browser as WebAssembly, so a figure can be dragged to turn, hovered,
+clicked, scrubbed and exported to SVG. The TypeScript package in [`web/`](web/README.md) wraps it with typed
+scene builders, a canvas player, a `<rough-figure>` element and a React component:
+
+```ts
+import { figure, cuboid, sphere, create, lag, FigurePlayer } from "rough-figure";
+
+const spec = figure({
+  width: 720, height: 520, zoom: 1.4, origin: [360, 360],
+  objects: [
+    cuboid(150, 28, 150, { id: "base", baseAt: [0, 0, 0], fill: "slate" }),
+    sphere(24, { id: "orb", baseAt: [0, 28, 0], fill: "sky", action: "ping" }),
+  ],
+  timeline: [lag(0.3, [create("base"), create("orb")])],
+});
+await FigurePlayer.create(canvas, spec, { onAction: ({ action }) => console.log(action) });
+```
+
+Scenes are plain JSON (`src/spec.rs`), so they can also be written by hand or generated. Build it with
+`scripts/build-web.sh` and see the full guide in [`web/README.md`](web/README.md) and the
+[docs site](docs/site/docs.html#web).
 
 ## Using it with AI agents
 
@@ -279,8 +304,8 @@ to the same folder). After editing `docs/cheatsheet.md`, run `scripts/sync-skill
 
 ## Limitations
 
-- The camera is isometric only. There is no perspective camera and no camera animation, only a fixed zoom
-  and origin.
+- The camera is isometric only. There is no perspective camera. It can turn about the vertical axis (`yaw`),
+  but the tilt is fixed and turning is not an animation you can script, only a camera setting.
 - Booleans work on flat shapes. Extrude a combined shape to get a solid with holes; there are no 3D booleans.
 - Ordering is exact for boxes and approximate for the rest. A concave extruded shape can order its own walls
   imperfectly, and solids that pass through each other are sorted by their centres.

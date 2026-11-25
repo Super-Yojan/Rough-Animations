@@ -26,6 +26,11 @@ pub mod render;
 pub mod text;
 pub mod world;
 
+#[cfg(feature = "spec")]
+pub mod spec;
+#[cfg(feature = "web")]
+pub mod web;
+
 pub use animation::{Animation, Easing};
 pub use api::{Error, Result, Sketch, Stage};
 pub use planar::Region;

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rough-figure demo</title>
+<style>
+  body { margin: 0; font: 16px/1.6 ui-sans-serif, system-ui, sans-serif; background: #fbf9f4; color: #23232a; }
+  main { max-width: 1040px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { font-size: 34px; margin: 0 0 4px; color: #3c3278; }
+  p.sub { margin: 0 0 24px; color: #6a6a80; }
+  .row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 800px) { .row { grid-template-columns: 1fr; } }
+  .card { background: #fff; border: 1.5px solid #23232a; border-radius: 14px; padding: 12px; box-shadow: 4px 4px 0 #23232a; }
+  .controls { display: grid; gap: 10px; font-size: 14px; }
+  .controls label { display: grid; gap: 4px; }
+  button, select { font: inherit; padding: 6px 12px; border: 1.5px solid #23232a; border-radius: 8px; background: #fff; cursor: pointer; }
+  #log { font: 13px/1.5 ui-monospace, monospace; background: #17161f; color: #e6e3f4; border-radius: 10px; padding: 10px 12px; min-height: 90px; white-space: pre-wrap; }
+  h2 { margin: 40px 0 12px; font-size: 20px; }
+  code { background: #f3efe6; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>rough-figure</h1>
+  <p class="sub">Drag to turn · hover a part · click it. Rendered live by the Rust engine in WebAssembly.</p>
+
+  <div class="row">
+    <div class="card"><canvas id="a"></canvas></div>
+    <div>
+      <div class="controls card">
+        <div><button id="play">Pause</button> <button id="replay">Replay</button></div>
+        <label>Timeline <input id="scrub" type="range" min="0" max="1" step="0.001" value="0"></label>
+        <label>Turn <input id="yaw" type="range" min="-180" max="180" step="1" value="0"></label>
+        <label>Theme
+          <select id="theme"><option>light</option><option>dark</option><option>chalkboard</option><option>blueprint</option><option>sepia</option><option>terminal</option></select>
+        </label>
+        <label>Look <select id="look"><option>sketch</option><option>clean</option></select></label>
+        <div><button id="svg">SVG poster</button> <button id="png">PNG</button></div>
+        <div>Last click</div>
+        <div id="log">(click a part)</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="svgout" class="card" style="margin-top:24px; display:none"></div>
+
+  <h2>As an HTML element</h2>
+  <p>No JavaScript to write: <code>&lt;rough-figure&gt;</code> with the description inline (or <code>src="…json"</code>).</p>
+  <div class="card" style="max-width:560px">
+    <rough-figure loop id="b">
+      <script type="application/json">
+      {
+        "width": 560, "height": 360, "zoom": 1.5, "origin": [280, 250], "yaw": 25,
+        "objects": [
+          {"id": "base", "kind": "cuboid", "size": [120, 24, 120], "base_at": [0, 0, 0], "fill": "slate"},
+          {"id": "cyl",  "kind": "cylinder", "radius": 30, "height": 70, "base_at": [0, 24, 0], "fill": "amber", "action": "spin"},
+          {"id": "ball", "kind": "sphere", "radius": 20, "base_at": [0, 94, 0], "fill": "rose", "action": "pop"}
+        ],
+        "timeline": [
+          {"op": "lag", "seconds": 0.25, "anims": [
+            {"op": "create", "target": "base"}, {"op": "create", "target": "cyl"}, {"op": "create", "target": "ball"}]},
+          {"op": "move_by", "target": "ball", "by": [0, 0, 0], "duration": 0.1},
+          {"op": "wait", "seconds": 1}
+        ]
+      }
+      </script>
+    </rough-figure>
+  </div>
+</main>
+
+<script type="module">
+  import { figure, cuboid, cylinder, cone, sphere, prism, rect, circle, label, create, lag, all, moveBy, fillTo, wait, FigurePlayer } from "../dist/index.js";
+  import "../dist/element.js";
+
+  // The same API as the Rust library, typed: this is a figure written in TypeScript.
+  const spec = figure({
+    width: 720, height: 520, zoom: 1.4, origin: [360, 360], yaw: 0,
+    objects: [
+      cuboid(150, 28, 150, { id: "base", baseAt: [0, 0, 0], fill: "slate" }),
+      cuboid(84, 76, 84, { id: "tower", baseAt: [0, 28, 0], fill: "purple", action: "open" }),
+      circle(15, { id: "dot", plane: "front", at: [0, 78, 42.5], fill: "white", solid: true }),
+      cylinder(24, 64, { id: "tank", baseAt: [-96, 0, 44], fill: "mint", action: "refresh" }),
+      cone(26, 64, { id: "cone", baseAt: [92, 0, 56], fill: "amber", action: "launch" }),
+      prism(rect(64, 64, { minus: circle(17) }), 14, { id: "plate", baseAt: [86, 0, -62], fill: "rose", action: "settings" }),
+      sphere(24, { id: "orb", baseAt: [0, 104, 0], fill: "sky", action: "ping" }),
+    ],
+    timeline: [
+      lag(0.22, ["base", "tower", "dot", "tank", "cone", "plate", "orb"].map((id) => create(id)), { duration: 2.4 }),
+      all([moveBy("orb", [0, 26, 0]), fillTo("orb", "gold")], { duration: 0.8, ease: "backOut" }),
+      wait(0.5),
+    ],
+  });
+
+  const log = document.getElementById("log");
+  const player = await FigurePlayer.create(document.getElementById("a"), spec, {
+    loop: true, loopDelay: 2.5,
+    onAction: (e) => { log.textContent = `action: ${e.action}\nid: ${e.id}`; },
+  });
+  window.player = player;
+
+  const $ = (id) => document.getElementById(id);
+  $("play").onclick = () => { player.playing ? player.pause() : player.play(); $("play").textContent = player.playing ? "Pause" : "Play"; };
+  $("replay").onclick = () => { player.replay(); $("play").textContent = "Pause"; };
+  $("scrub").oninput = (e) => { player.scrub(+e.target.value); $("play").textContent = "Play"; };
+  $("yaw").oninput = (e) => player.setYaw(+e.target.value);
+  $("theme").onchange = (e) => player.setTheme(e.target.value);
+  $("look").onchange = (e) => player.setLook(e.target.value);
+
+  $("svg").onclick = () => {
+    const svg = player.toSVG();
+    window.lastSvg = svg;
+    const out = $("svgout");
+    out.style.display = "block";
+    out.innerHTML = `<div style="font:13px ui-monospace,monospace;margin-bottom:6px">SVG poster · ${(svg.length / 1024).toFixed(0)} KB · vector, sharp at any size</div>` + svg;
+    out.querySelector("svg").style.cssText = "width:100%;height:auto;display:block";
+  };
+  $("png").onclick = async () => { const b = await player.toBlob(); window.open(URL.createObjectURL(b)); };
+
+  document.getElementById("b").addEventListener("action", (e) => { log.textContent = `element action: ${e.detail.action}`; });
+</script>
+</body>
+</html>

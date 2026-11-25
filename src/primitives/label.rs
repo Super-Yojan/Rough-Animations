@@ -95,7 +95,7 @@ impl Label {
         t: &Transform,
         region: &Region,
     ) -> Vec<Vec<Point2D<f32>>> {
-        let mean_scale = (t.scale.x + t.scale.y + t.scale.z) / 3.0;
+        let mean_scale = (t.scale.x + t.scale.y + t.scale.z) / 3.0 * ctx.camera.pixel_ratio;
         let center = ctx.project(t.position);
         region
             .contours
@@ -157,7 +157,7 @@ impl Label {
                     ctx.fill_exact(&contours, color);
                     if self.hand > 0.0 {
                         // Pen weight: thicken the letters evenly, like a marker would.
-                        let mean_scale = (t.scale.x + t.scale.y + t.scale.z) / 3.0;
+                        let mean_scale = (t.scale.x + t.scale.y + t.scale.z) / 3.0 * ctx.camera.pixel_ratio;
                         let width = PEN_WIDTH * self.hand * self.size * mean_scale;
                         ctx.stroke_exact(&contours, color, width.max(0.5));
                     }

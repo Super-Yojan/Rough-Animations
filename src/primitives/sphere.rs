@@ -58,11 +58,12 @@ impl Geometry for Sphere {
             .into_iter()
             .map(|p| t.apply(p))
             .collect();
+        let view = ctx.camera.toward_viewer();
         let front: Vec<bool> = world
             .iter()
             .map(|p| {
                 let d = *p - t.position;
-                d.x + d.y + d.z > 0.0
+                crate::primitives::dot(d, view) > 0.0
             })
             .collect();
         if let Some(start) = (0..SEGMENTS).find(|&i| front[i] && !front[(i + SEGMENTS - 1) % SEGMENTS])

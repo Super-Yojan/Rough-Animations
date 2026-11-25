@@ -77,6 +77,12 @@ one after another (3 s at most); `car.fade_in()` `car.fade_out()` `car.opacity_t
 Each returns an `Anim`, so `.duration()` `.ease()` `.delay()` and `all([..])` work. `s.place(&car, p)` moves it
 instantly, and a group works with `create_all(&car)` and `clear(&car)`.
 
+**Turning, clicking, vectors:** `.yaw(deg(30))` turns the whole scene about the vertical axis (`s.set_yaw(radians)` to
+change it later); solids, hidden-surface order and wall decals follow. `obj.action("open")` names a part, and
+`s.pick(x, y)` returns `Some((id, action))` for the topmost part under a screen pixel. `.pixel_ratio(2.0)` draws for
+high-density screens (pass the device size to `Stage::new`, and scale `zoom`/`origin` by the same ratio).
+`s.to_svg()` returns the current frame as an SVG string (finished frames; a half-drawn shape is written whole).
+
 ## Layout
 `s.put(obj, x, y)` adds `obj` standing on screen pixel `(x, y)` (text and flat shapes are centred there):
 `s.put(title("Hello"), 640, 80)`, `s.put(label("note"), 200, 600)`. Defaults: `label` is size 32 stone-gray and

@@ -436,3 +436,18 @@ fn latex_functions_work_when_installed() {
     s.add(latex(r"\textbf{Bold} and $x^2$").unwrap());
     s.add(math(r"\frac12").unwrap().handwritten());
 }
+
+#[test]
+fn turning_picking_and_vector_output_on_the_sheet_work() {
+    let mut s = Stage::new(400, 300).yaw(deg(30)).pixel_ratio(1.0);
+    let part = s.add(cube(60).base_at((0, 0, 0)).fill("purple").action("open"));
+    s.play(create(part));
+    s.seek(s.duration());
+    s.set_yaw(deg(60));
+    // The cube stands at the origin, which is at 50% x and 60% down by default.
+    let (id, action) = s.pick(200.0, 180.0).expect("the cube is under its own centre");
+    assert_eq!((id, action), (part, Some("open")));
+    assert!(s.pick(2.0, 2.0).is_none());
+    let svg = s.to_svg();
+    assert!(svg.starts_with("<svg ") && svg.contains("<path"));
+}

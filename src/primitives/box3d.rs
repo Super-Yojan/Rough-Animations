@@ -80,7 +80,7 @@ impl Geometry for Box3D {
             let n = transform.rotate_dir(Vec3::new(normal[0], normal[1], normal[2]));
             // The isometric camera looks along (1, 1, 1) from the viewer toward the scene:
             // a face is visible when its normal points toward the viewer. Back faces are culled.
-            if n.x + n.y + n.z <= 1e-6 {
+            if !ctx.camera.faces_viewer(n) {
                 continue;
             }
             let pts: Vec<_> = corners

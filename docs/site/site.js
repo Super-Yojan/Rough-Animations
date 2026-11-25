@@ -26,10 +26,27 @@ function highlightShell(src) {
           .replace(/(\s)(--?[a-z][\w-]*)/g, '$1<span class="t">$2</span>')
   ).join("\n");
 }
+const TS_KW = /^(import|from|const|let|await|async|export|new|true|false|return|function|type|interface|as|of|null|undefined)$/;
+function highlightTs(src) {
+  const re = /(\/\/[^\n]*)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(\b\d[\d_.]*\b)|(\b[A-Za-z_$][A-Za-z0-9_$]*\b)(\s*\()?/g;
+  let out = "", last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    const [all, com, str, num, id, call] = m;
+    if (com) out += `<span class="c">${esc(com)}</span>`;
+    else if (str) out += `<span class="s">${esc(str)}</span>`;
+    else if (num) out += `<span class="n">${num}</span>`;
+    else if (id && TS_KW.test(id)) out += `<span class="k">${id}</span>${call || ""}`;
+    else if (id && call) out += `<span class="f">${id}</span>${call}`;
+    else out += esc(all);
+    last = m.index + all.length;
+  }
+  return out + esc(src.slice(last));
+}
 document.querySelectorAll("pre code").forEach(c => {
   const lang = c.dataset.lang || "rust";
   const src = c.textContent.replace(/^\n/, "").replace(/\s+$/, "");
-  c.innerHTML = lang === "sh" ? highlightShell(src) : lang === "toml" ? esc(src).replace(/^(\[.*\])$|(&quot;|")([^"\n]*)"/gm, (_m, tbl, _q, body) => tbl ? `<span class="t">${tbl}</span>` : `<span class="s">"${body}"</span>`) : lang === "text" ? esc(src) : highlightRust(src);
+  c.innerHTML = lang === "sh" ? highlightShell(src) : lang === "toml" ? esc(src).replace(/^(\[.*\])$|(&quot;|")([^"\n]*)"/gm, (_m, tbl, _q, body) => tbl ? `<span class="t">${tbl}</span>` : `<span class="s">"${body}"</span>`) : lang === "text" ? esc(src) : lang === "ts" ? highlightTs(src) : highlightRust(src);
   c.dataset.raw = src;
 });
 

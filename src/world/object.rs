@@ -28,6 +28,9 @@ pub struct Object {
     pub visible: bool,
     /// Draw layer; lower is drawn first, before depth is considered.
     pub layer: i32,
+    /// A name for what this part does when someone clicks it (`"open"`, `"compose"`). The
+    /// engine only carries it: [`Stage::pick`](crate::api::stage::Stage::pick) reports it.
+    pub action: Option<String>,
     pub(crate) geometry: Box<dyn Geometry>,
 }
 
@@ -43,6 +46,7 @@ impl Object {
             style,
             visible: true,
             layer: geometry.layer(),
+            action: None,
             geometry: Box::new(geometry),
         }
     }
@@ -112,6 +116,12 @@ impl Object {
     /// Override the draw layer (lower is drawn first).
     pub fn layer(mut self, layer: i32) -> Self {
         self.layer = layer;
+        self
+    }
+
+    /// Mark this object as an interactive part that reports `name` when picked.
+    pub fn action(mut self, name: &str) -> Self {
+        self.action = Some(name.to_string());
         self
     }
 
@@ -272,8 +282,8 @@ impl Object {
             .unwrap_or_else(|| Aabb::point(self.transform.position))
     }
 
-    pub(crate) fn depth(&self) -> f32 {
-        self.geometry.depth(&self.transform)
+    pub(crate) fn depth(&self, toward_viewer: [f32; 3]) -> f32 {
+        self.geometry.depth(&self.transform, toward_viewer)
     }
 }
 

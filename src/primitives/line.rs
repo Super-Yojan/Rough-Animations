@@ -30,9 +30,8 @@ impl Geometry for Line3D {
         ctx.rough_polyline(&[a, b], style);
     }
 
-    fn depth(&self, t: &Transform) -> f32 {
-        let m = t.apply((self.from + self.to) * 0.5);
-        m.x + m.y + m.z
+    fn depth(&self, t: &Transform, v: [f32; 3]) -> f32 {
+        crate::primitives::dot(t.apply((self.from + self.to) * 0.5), v)
     }
 }
 
@@ -76,7 +75,7 @@ impl Geometry for Arrow3D {
             return;
         }
         let (ux, uy) = (dx / len, dy / len);
-        let head = self.head.min(len * 0.6);
+        let head = (self.head * ctx.camera.pixel_ratio).min(len * 0.6);
         let wing = |sign: f32| {
             let (s, c) = (sign * 28.0_f32.to_radians()).sin_cos();
             // Rotate the reversed direction by ±28°.
@@ -86,8 +85,7 @@ impl Geometry for Arrow3D {
         ctx.rough_polyline(&[wing(1.0), b, wing(-1.0)], style);
     }
 
-    fn depth(&self, t: &Transform) -> f32 {
-        let m = t.apply((self.from + self.to) * 0.5);
-        m.x + m.y + m.z
+    fn depth(&self, t: &Transform, v: [f32; 3]) -> f32 {
+        crate::primitives::dot(t.apply((self.from + self.to) * 0.5), v)
     }
 }

@@ -3,4 +3,5 @@
 pub mod camera;
 pub mod export;
 pub mod partial;
+pub mod svg;
 pub mod underlay;

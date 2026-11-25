@@ -3,7 +3,19 @@ name = "rough-animations"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[features]
+# Build scenes from JSON (what the browser components feed the engine).
+spec = ["dep:serde", "dep:serde_json"]
+# The WebAssembly entry point used by the TypeScript package in `web/`.
+web = ["spec", "dep:wasm-bindgen"]
+
 [dependencies]
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+wasm-bindgen = { version = "0.2", optional = true }
 roughr = "0.14"
 rough_tiny_skia = "0.14"
 palette = "0.7"

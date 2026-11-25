@@ -46,6 +46,15 @@
   <a href="#layout" data-k="put tag heading pixel screen">Layout helpers</a>
   <a href="#themes" data-k="theme dark chalkboard blueprint sepia terminal light custom background colours">Themes</a>
   <a href="#look" data-k="sketch clean wobble roughness hatch">The look</a>
+  <a href="#turning" data-k="yaw rotate turn camera pick action svg pixel_ratio">Turning &amp; picking</a>
+  <h4>On the web</h4>
+  <a href="#web" data-k="wasm browser typescript live interactive">Overview &amp; setup</a>
+  <a href="#web-figure" data-k="json spec objects timeline builders">Describing a figure</a>
+  <a href="#web-interaction" data-k="drag turn hover click action pick keyboard">Turning &amp; clicking</a>
+  <a href="#web-components" data-k="element react player canvas events">Components</a>
+  <a href="#web-figures" data-k="library inbox rocket gears servers starter">Starter figures</a>
+  <a href="#web-posters" data-k="svg png poster export static fallback">Posters (SVG, PNG)</a>
+  <a href="#web-notes" data-k="retina pixel ratio performance limits">Notes &amp; limits</a>
   <h4>Output</h4>
   <a href="#rendering" data-k="render mp4 gif png webm still">Rendering</a>
   <a href="#recipes" data-k="avatar scene example">Recipes</a>
@@ -388,6 +397,29 @@ let dark = Theme::by_name("dark");                // Option&lt;Theme&gt;; Theme:
     .wobble(8);        // redraw strokes 8x a second: boiling lines</code></pre></div>
 <p>Strokes are seeded per object, so they stay put from frame to frame instead of shimmering, unless you ask for <code>wobble</code>.</p>
 
+<h2 id="turning">Turning, picking and vectors</h2>
+<p>These engine features are what the <a href="#web">web components</a> are built on, and they work in plain Rust too.</p>
+<table>
+<tr><th>API</th><th>What it does</th></tr>
+<tr><td><code>.yaw(deg(30))</code></td><td>Turn the whole scene about the vertical axis. Solids, hidden-surface order and wall decals all follow. <code>s.set_yaw(radians)</code> changes it later, and <code>s.current_yaw()</code> reads it</td></tr>
+<tr><td><code>obj.action("open")</code></td><td>Name a part so it can be found by <code>pick</code></td></tr>
+<tr><td><code>s.pick(x, y)</code></td><td><code>Some((id, action))</code> for the topmost visible part under a screen pixel, or <code>None</code></td></tr>
+<tr><td><code>.pixel_ratio(2.0)</code></td><td>Draw for high-density screens: line widths, hatching, text and arrowheads scale with it. Pass the device size to <code>Stage::new</code> and scale <code>zoom</code> and <code>origin</code> by the same ratio</td></tr>
+<tr><td><code>s.to_svg()</code></td><td>The current frame as an SVG string, same strokes and hatching as vector paths</td></tr>
+<tr><td><code>s.time()</code> <code>s.redraw()</code></td><td>The time the scene has been advanced to, and a draw of the scene as it is without moving time</td></tr>
+</table>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>turn.rs</span><button>copy</button></div>
+<pre><code>let mut s = Stage::new(600, 440).zoom(1.3).origin(300, 300).yaw(deg(40));
+let tower = s.add(cuboid(80, 70, 80).base_at((0, 30, 0)).fill("purple").action("open"));
+s.play(create(tower));
+s.seek(s.duration());
+s.set_yaw(deg(90));                                   // turn the scene a quarter circle
+let hit = s.pick(300.0, 250.0);                       // Some((tower, Some("open")))
+std::fs::write("tower.svg", s.to_svg())?;             // a vector poster</code></pre></div>
+<img src="turn.png" alt="One scene from four turns of the camera" style="border:1.5px solid var(--ink);border-radius:12px;max-width:760px">
+<p>Run <code>cargo run --release --example turn</code> to render that scene from four angles (<code>target/turn-0.png</code> to <code>turn-3.png</code>). At 180° the face drawn on the front of the tall box is gone, because wall decals only show from the side they face.</p>
+<div class="note"><b>Note</b> <code>pick</code> tests each object by the screen outline of its bounding box, so round parts are hit a little beyond their drawn edge. Plain text is never picked. <code>to_svg</code> writes a shape caught mid-<code>create</code> whole, so export finished frames.</div>
+
 <h2 id="rendering">Rendering</h2>
 <p><code>s.render(path)</code> picks the output from the extension:</p>
 <table>
@@ -409,6 +441,180 @@ s.add(cuboid(90, 90, 90).base_at((0, 0, 0)).fill("mint"));
 s.add(sphere(40).at((100, 20, 70)).fill("rose"));
 s.still_cropped("figure.png", 16)?;               // final frame, trimmed, 16 px of margin</code></pre></div>
 <p>PNG and GIF keep the transparency. <code>.mp4</code> and <code>.webm</code> cannot, and <code>render</code> returns an error saying so rather than filling the page with black. <code>"transparent"</code> and <code>"#rrggbbaa"</code> also work as colours. The ink stays the theme's, so on a dark slide pair it with a dark theme.</p>
+
+<h2 id="web">On the web</h2>
+<p>The same engine compiles to WebAssembly and runs live in the browser. A TypeScript package, <code>rough-figure</code> (in <code>web/</code>), wraps it with typed scene builders, a canvas player, a <code>&lt;rough-figure&gt;</code> element and a React component. Figures can be dragged to turn, hovered, clicked, scrubbed, themed and exported to SVG.</p>
+<div class="note warn"><b>Placeholder name</b> <code>rough-figure</code> is a working name and the package is not published yet, so build it from the repo.</div>
+<h3 id="web-install">Build it</h3>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span><button>copy</button></div>
+<pre><code data-lang="sh">rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli --version "$(grep -A1 'name = "wasm-bindgen"$' Cargo.lock | grep version | cut -d'"' -f2)" --locked
+cd web && pnpm install
+pnpm build:wasm     # Rust to WebAssembly (runs scripts/build-web.sh)
+pnpm build          # TypeScript to dist/, with the wasm copied next to it
+pnpm demo           # http://localhost:5173/demo/  and  /demo/gallery.html</code></pre></div>
+<p>The wasm file is about 1.7 MB (about 570 KB gzipped). The engine's <code>spec</code> and <code>web</code> Cargo features add JSON scenes and the WebAssembly entry point; the plain Rust library does not need them.</p>
+
+<h3 id="web-first">A first figure</h3>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>figure.ts</span><button>copy</button></div>
+<pre><code data-lang="ts">import { figure, cuboid, sphere, create, lag, FigurePlayer } from "rough-figure";
+
+const spec = figure({
+  width: 720, height: 520, zoom: 1.4, origin: [360, 360],
+  objects: [
+    cuboid(150, 28, 150, { id: "base", baseAt: [0, 0, 0], fill: "slate" }),
+    sphere(24, { id: "orb", baseAt: [0, 28, 0], fill: "sky", action: "ping" }),
+  ],
+  timeline: [lag(0.3, [create("base"), create("orb")])],
+});
+
+const player = await FigurePlayer.create(document.querySelector("canvas")!, spec, {
+  loop: true,
+  onAction: ({ action, id }) => console.log(action, id),
+});</code></pre></div>
+
+<h2 id="web-figure">Describing a figure</h2>
+<p>A figure is JSON that mirrors the Rust API one to one: an object is a <code>kind</code> plus the builders you would chain, and an animation is an <code>op</code> plus its target. <strong>Angles are in degrees.</strong> Unknown fields are rejected, and mistakes (an unknown colour, a missing field, an animation naming an object that does not exist) come back as readable errors instead of drawing nothing.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>figure.json</span><button>copy</button></div>
+<pre><code data-lang="text">{
+  "width": 900, "height": 600, "theme": "light",
+  "objects": [
+    { "id": "tower", "kind": "cuboid", "size": [80, 110, 80], "base_at": [0, 0, 0],
+      "fill": "purple", "action": "open" }
+  ],
+  "timeline": [
+    { "op": "create", "target": "tower" },
+    { "op": "move_by", "target": "tower", "by": [100, 0, 0], "duration": 1.5 }
+  ]
+}</code></pre></div>
+<h3>Figure fields</h3>
+<table>
+<tr><th>Field</th><th>Meaning</th></tr>
+<tr><td><code>width</code> <code>height</code></td><td>Canvas size in pixels (required)</td></tr>
+<tr><td><code>zoom</code> <code>origin</code></td><td>Scene scale, and the screen pixel where <code>(0, 0, 0)</code> lands (default centre, 60% down)</td></tr>
+<tr><td><code>yaw</code></td><td>Starting turn in degrees</td></tr>
+<tr><td><code>theme</code></td><td><code>light</code>, <code>dark</code>, <code>chalkboard</code>, <code>blueprint</code>, <code>sepia</code> or <code>terminal</code></td></tr>
+<tr><td><code>background</code></td><td>A colour, or <code>"transparent"</code> to show the page behind the canvas</td></tr>
+<tr><td><code>look</code> <code>roughness</code> <code>wobble</code></td><td><code>"sketch"</code> or <code>"clean"</code> lines, how far lines wander, and strokes redrawn this many times a second</td></tr>
+<tr><td><code>fps</code></td><td>Frame rate used when the timeline is rendered as video</td></tr>
+<tr><td><code>objects</code> <code>timeline</code></td><td>The parts, and the animations played one after another</td></tr>
+</table>
+<h3>Objects</h3>
+<p><code>kind</code> is one of <code>cuboid</code> <code>cube</code> <code>cylinder</code> <code>cone</code> <code>sphere</code> <code>circle</code> <code>ellipse</code> <code>rect</code> <code>ngon</code> <code>star</code> <code>polygon</code> <code>prism</code> <code>line</code> <code>arrow</code> <code>text</code> <code>label</code> <code>title</code>. Shape parameters are <code>size</code>, <code>radius</code>, <code>height</code>, <code>width</code>, <code>rx</code>, <code>ry</code>, <code>sides</code>, <code>points</code>, <code>outer</code>, <code>inner</code>, <code>from</code>, <code>to</code>, <code>text</code> and (for <code>prism</code>) <code>shape</code>. Any object also takes:</p>
+<table>
+<tr><th>Option</th><th>Meaning</th></tr>
+<tr><td><code>id</code></td><td>Name that animations and click events refer to</td></tr>
+<tr><td><code>at</code> <code>base_at</code></td><td>Centre the object on a point, or stand it on one</td></tr>
+<tr><td><code>rotated</code> <code>scaled</code></td><td>Rotation in degrees <code>[x, y, z]</code>, and a scale number or <code>[x, y, z]</code></td></tr>
+<tr><td><code>fill</code> <code>stroke</code> <code>color</code></td><td>Colours: a name or <code>"#rrggbb"</code></td></tr>
+<tr><td><code>opacity</code> <code>stroke_width</code> <code>layer</code> <code>hidden</code></td><td>As in Rust</td></tr>
+<tr><td><code>plane</code> <code>shift</code></td><td><code>"front"</code>, <code>"side"</code> or <code>"ground"</code>, and a shift in that plane (flat shapes and text)</td></tr>
+<tr><td><code>solid</code> <code>hatched</code></td><td>Flat fill versus hatching</td></tr>
+<tr><td><code>font_size</code> <code>tracking</code> <code>animate</code> <code>handwritten</code></td><td>Text styling</td></tr>
+<tr><td><code>union</code> <code>minus</code> <code>intersect</code> <code>xor</code></td><td>Another flat object to combine with, applied before placement</td></tr>
+<tr><td><code>action</code></td><td>Makes the part interactive, see <a href="#web-interaction">Turning &amp; clicking</a></td></tr>
+</table>
+<h3>Animations</h3>
+<p><code>op</code> is one of <code>create</code> <code>write</code> <code>fade_in</code> <code>uncreate</code> <code>fade_out</code> <code>move_to</code> <code>move_by</code> <code>move_from</code> <code>rotate_to</code> <code>rotate_by</code> <code>scale_to</code> <code>opacity_to</code> <code>fill_to</code> <code>stroke_to</code> <code>morph</code> <code>wait</code> <code>all</code> <code>seq</code> <code>lag</code> <code>create_all</code> <code>write_all</code> <code>clear</code>. Arguments are <code>target</code> (or <code>targets</code>), <code>to</code>, <code>by</code>, <code>shape</code> (for <code>morph</code>), <code>seconds</code> (for <code>wait</code> and the gap of <code>lag</code>) and <code>anims</code> (children of <code>all</code>, <code>seq</code> and <code>lag</code>). Any of them takes <code>duration</code>, <code>delay</code> and <code>ease</code> (<code>linear</code>, <code>quadIn</code>, <code>cubicInOut</code>, <code>backOut</code>, <code>bounceOut</code> and the rest of <a href="#timing">the easings</a>).</p>
+<h3>Typed builders</h3>
+<p>In TypeScript you rarely write the JSON: the builders mirror the Rust functions, take camelCase options, and are checked by the compiler. <code>figure({..})</code> gives completion for a whole figure.</p>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>builders.ts</span><button>copy</button></div>
+<pre><code data-lang="ts">import { figure, prism, star, circle, create, rotateBy, all, toJSON } from "rough-figure";
+
+const gear = figure({
+  width: 480, height: 360, zoom: 1.2, origin: [220, 250],
+  objects: [
+    prism(star(12, 56, 45, { minus: circle(16) }), 24, { id: "gear", baseAt: [0, 0, 0], fill: "purple" }),
+  ],
+  timeline: [create("gear"), rotateBy("gear", [0, 70, 0], { duration: 2, ease: "cubicInOut" })],
+});
+toJSON(gear);   // the JSON the engine reads</code></pre></div>
+<p>Objects: <code>cuboid cube cylinder cone sphere circle ellipse rect ngon star polygon prism line arrow text label title</code>. Animations: <code>create write fadeIn uncreate fadeOut moveTo moveBy moveFrom rotateTo rotateBy scaleTo opacityTo fillTo strokeTo morph wait all seq lag createAll writeAll clear</code>.</p>
+
+<h2 id="web-interaction">Turning &amp; clicking</h2>
+<ul>
+<li><strong>Drag to turn.</strong> Dragging sideways turns the scene about the vertical axis. Let go while moving and it keeps spinning, then slows down. The arrow keys turn it too (Shift for bigger steps), because the canvas can take focus.</li>
+<li><strong>Hover.</strong> A part with an <code>action</code> gets a heavier outline and the cursor becomes a pointer.</li>
+<li><strong>Click.</strong> Clicking such a part (without dragging) calls <code>onAction({ action, id })</code>, or fires an <code>action</code> event on the element. A drag is never a click.</li>
+<li><strong>Time.</strong> <code>play</code>, <code>pause</code>, <code>replay</code>, <code>seek(t)</code> and <code>scrub(0..1)</code> control the timeline. Looping holds the finished figure for <code>loopDelay</code> seconds before restarting. With <code>prefers-reduced-motion</code> the figure starts finished.</li>
+<li><strong>Cheap when idle.</strong> It draws only when something changes, and stops while scrolled out of view.</li>
+</ul>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>scroll-driven</span><button>copy</button></div>
+<pre><code data-lang="ts">// Tie the timeline to scroll position (a "story" figure).
+addEventListener("scroll", () => {
+  const r = canvas.getBoundingClientRect();
+  player.scrub(Math.min(Math.max(1 - r.bottom / (innerHeight + r.height), 0), 1));
+});</code></pre></div>
+
+<h2 id="web-components">Components</h2>
+<h3>The player</h3>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>player.ts</span><button>copy</button></div>
+<pre><code data-lang="ts">const player = await FigurePlayer.create(canvas, spec, {
+  autoplay: true,        // false shows the finished figure
+  loop: true, loopDelay: 1.2,
+  interactive: true,     // drag, hover, click (false for a fixed picture)
+  speed: 1,
+  pixelRatio: 2,         // default: devicePixelRatio, at most 3
+  wasmUrl: "/assets/rough_engine_bg.wasm",   // if not next to the module
+  onAction: ({ action, id }) =&gt; {},
+  onReady: (p) =&gt; {},
+  onError: (e) =&gt; {},
+});</code></pre></div>
+<table>
+<tr><th>Method</th><th>Meaning</th></tr>
+<tr><td><code>play()</code> <code>pause()</code> <code>replay()</code></td><td>Playback</td></tr>
+<tr><td><code>seek(t)</code> <code>scrub(u)</code></td><td>Jump to a time in seconds, or to a fraction 0 to 1 of the timeline (and pause)</td></tr>
+<tr><td><code>setYaw(deg)</code></td><td>Turn the scene</td></tr>
+<tr><td><code>setTheme(name)</code> <code>setLook(look)</code> <code>setSpeed(n)</code></td><td>Change the look live, keeping the time and turn</td></tr>
+<tr><td><code>toSVG()</code> <code>toBlob()</code></td><td>Export, see <a href="#web-posters">Posters</a></td></tr>
+<tr><td><code>destroy()</code></td><td>Stop and free the figure</td></tr>
+<tr><td><code>duration</code> <code>time</code> <code>playing</code> <code>yaw</code> <code>lastFrameMs</code></td><td>Read-only state, including how long the last frame took to draw</td></tr>
+</table>
+<h3>The HTML element</h3>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>index.html</span><button>copy</button></div>
+<pre><code data-lang="text">&lt;script type="module" src="rough-figure/element"&gt;&lt;/script&gt;
+
+&lt;rough-figure src="/figures/inbox.json" theme="dark" loop&gt;&lt;/rough-figure&gt;
+
+&lt;!-- or with the description inline --&gt;
+&lt;rough-figure&gt;&lt;script type="application/json"&gt;{ "width": 480, "height": 360, "objects": [] }&lt;/script&gt;&lt;/rough-figure&gt;</code></pre></div>
+<p>Attributes: <code>src</code>, <code>theme</code>, <code>look</code>, <code>yaw</code>, <code>speed</code>, <code>loop</code>, <code>static</code> (show the finished figure) and <code>fixed</code> (no dragging or clicking). Events: <code>ready</code>, <code>error</code> and <code>action</code> (<code>event.detail</code> is <code>{ action, id }</code>). The running player is on <code>element.player</code>.</p>
+<h3>React</h3>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>App.tsx</span><button>copy</button></div>
+<pre><code data-lang="ts">import { RoughFigure } from "rough-figure/react";
+
+&lt;RoughFigure spec={spec} theme="dark" loop onAction={(e) =&gt; navigate(e.action)} /&gt;;</code></pre></div>
+<p>The figure restarts when <code>spec</code> changes (compared by value). <code>theme</code>, <code>look</code>, <code>yaw</code> and <code>speed</code> update live without a restart.</p>
+
+<h2 id="web-figures">Starter figures</h2>
+<p>Four original figures built from simple solids, each with clickable parts. They are ordinary figure values: copy one and change it.</p>
+<table>
+<tr><th>Figure</th><th>Shows</th><th>Actions</th></tr>
+<tr><td><code>inbox</code></td><td>An open tray with an envelope dropping in</td><td><code>compose</code> (tray), <code>open</code> (envelope)</td></tr>
+<tr><td><code>settings</code></td><td>Two gears that turn</td><td><code>settings</code>, <code>tune</code></td></tr>
+<tr><td><code>rocket</code></td><td>A rocket lifting off its pad</td><td><code>launch</code>, <code>fins</code></td></tr>
+<tr><td><code>servers</code></td><td>Three servers with status lights</td><td><code>unit-1</code>, <code>unit-2</code>, <code>unit-3</code></td></tr>
+</table>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>figures.ts</span><button>copy</button></div>
+<pre><code data-lang="ts">import { figures } from "rough-figure/figures";
+
+FigurePlayer.create(canvas, figures.rocket, { onAction: ({ action }) =&gt; launch(action) });</code></pre></div>
+
+<h2 id="web-posters">Posters (SVG and PNG)</h2>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>posters.ts</span><button>copy</button></div>
+<pre><code data-lang="ts">player.seek(player.duration);        // the finished figure
+const svg = player.toSVG();          // vector paths, same strokes and hatching, sharp at any size
+const png = await player.toBlob();   // what is on the canvas right now</code></pre></div>
+<p>Use the SVG as the fallback image while the engine loads, for print, or for social cards. A shape caught mid-<code>create</code> is written whole, so export finished frames. With a transparent page, hidden-line removal uses the theme's page colour.</p>
+
+<h2 id="web-notes">Notes &amp; limits</h2>
+<ul>
+<li><strong>Sharp on retina.</strong> Figures draw at <code>devicePixelRatio</code> (at most 3) and the canvas is shown at the figure's own size or smaller. Cost grows with the square of the ratio: a 720×520 figure takes about 36 ms a frame at 2×. Pass <code>pixelRatio: 1</code> for very large figures.</li>
+<li><strong>Rewinding.</strong> A stage only plays forward, so going backwards rebuilds the scene and replays it to the target time. Nothing is drawn during that, but a long timeline costs one forward seek of its length.</li>
+<li><strong>No LaTeX in the browser.</strong> <code>math</code> and <code>latex</code> need <code>pdflatex</code> and are not part of the web build.</li>
+<li><strong>Picking is approximate</strong> for round parts, see <a href="#turning">Turning &amp; picking</a>.</li>
+<li><strong>Not production-ready yet.</strong> The package name is a placeholder, nothing is published, and the React wrapper has been type-checked but not run in a browser.</li>
+</ul>
 
 <h2 id="recipes">Recipes</h2>
 <h3 id="recipe-scenes">Multi-scene videos</h3>
@@ -437,6 +643,7 @@ s.still_cropped("figure.png", 16)?;               // final frame, trimmed, 16 px
 <tr><td><code>themes</code></td><td><code>target/themes.png</code>, the same scene in all six built-in themes</td></tr>
 <tr><td><code>handwritten</code></td><td><code>target/handwritten.png</code>, typeset vs handwritten formulas</td></tr>
 <tr><td><code>occlusion</code></td><td><code>target/occlusion.png</code>, stacking and overlap</td></tr>
+<tr><td><code>turn</code></td><td><code>target/turn-0.png</code> to <code>turn-3.png</code>, one scene from four turns of the camera</td></tr>
 <tr><td><code>intro</code></td><td><code>docs/media/intro.mp4</code>, the intro video</td></tr>
 </table>
 <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>terminal</span><button>copy</button></div>
@@ -495,6 +702,7 @@ $S/frame.sh target/out.mp4 -0.5 target/end.png              # a negative time co
 <tr><td>Themes</td><td><code>.theme("dark")</code> (<code>light</code> <code>dark</code> <code>chalkboard</code> <code>blueprint</code> <code>sepia</code> <code>terminal</code>) <code>Theme::custom(page, ink)</code> <code>.title</code> <code>.caption</code> <code>.ink</code> <code>.background</code> <code>.sketch</code> <code>Theme::by_name</code></td></tr>
 <tr><td>Stage</td><td><code>new</code> <code>.fps</code> <code>.theme</code> <code>.background</code> <code>.origin</code> <code>.zoom</code> <code>.wobble</code> <code>.sketch</code> / <code>add</code> <code>play</code> <code>wait</code> <code>render</code> <code>pixel</code></td></tr>
 <tr><td>Layout</td><td><code>put</code> <code>tag</code> <code>heading</code> <code>screen</code> <code>dimensions</code></td></tr>
+<tr><td>Turning</td><td><code>.yaw</code> <code>set_yaw</code> <code>.action</code> <code>pick</code> <code>.pixel_ratio</code> <code>to_svg</code></td></tr>
 </table>
 <p>Lower-level control (<code>Scene</code>, <code>Region</code>, custom <code>Geometry</code>, <code>Stage::with</code>) lives in the modules, not the prelude.</p>
 
@@ -517,7 +725,7 @@ $S/frame.sh target/out.mp4 -0.5 target/end.png              # a negative time co
 
 <h2 id="limitations">Limitations</h2>
 <ul>
-<li>The camera is isometric only. No perspective and no camera animation, only a fixed zoom and origin.</li>
+<li>The camera is isometric only. No perspective. It can turn about the vertical axis (<code>yaw</code>), but the tilt is fixed and turning is a camera setting, not a scripted animation.</li>
 <li>Booleans work on flat shapes. Extrude a combined shape to get a solid with holes; there are no 3D booleans.</li>
 <li>Ordering is exact for boxes and approximate for the rest. A concave extruded shape can order its own walls imperfectly, and solids that pass through each other are sorted by their centres.</li>
 <li>Upright text labels are always drawn on top, even if the thing they label is partly hidden.</li>

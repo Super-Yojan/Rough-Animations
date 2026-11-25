@@ -4,12 +4,6 @@ use crate::world::transform::Vec3;
 use euclid::default::Point2D;
 use std::f32::consts::TAU;
 
-/// Whether a surface with outward normal `n` faces the isometric camera, which looks along
-/// (1, 1, 1) from the viewer toward the scene.
-pub fn faces_viewer(n: Vec3) -> bool {
-    n.x + n.y + n.z > 1e-6
-}
-
 /// Directional shading for a surface with unit normal `n`: +Y brightest, +Z base, +X darkest.
 /// Axis-aligned normals give exactly 1.15 / 1.0 / 0.78.
 pub fn shading(n: Vec3) -> f32 {
@@ -78,9 +72,16 @@ mod tests {
 
     #[test]
     fn visibility_matches_the_three_front_faces() {
-        assert!(faces_viewer(Vec3::new(0., 1., 0.)));
-        assert!(faces_viewer(Vec3::new(1., 0., 0.)));
-        assert!(faces_viewer(Vec3::new(0., 0., 1.)));
-        assert!(!faces_viewer(Vec3::new(0., -1., 0.)));
+        let cam = crate::render::camera::IsoCamera::new(0.0, 0.0);
+        assert!(cam.faces_viewer(Vec3::new(0., 1., 0.)));
+        assert!(cam.faces_viewer(Vec3::new(1., 0., 0.)));
+        assert!(cam.faces_viewer(Vec3::new(0., 0., 1.)));
+        assert!(!cam.faces_viewer(Vec3::new(0., -1., 0.)));
+        // Turned a half circle, the back faces show instead.
+        let mut back = cam;
+        back.yaw_rad = std::f32::consts::PI;
+        assert!(back.faces_viewer(Vec3::new(-1., 0., 0.)));
+        assert!(back.faces_viewer(Vec3::new(0., 0., -1.)));
+        assert!(!back.faces_viewer(Vec3::new(1., 0., 0.)));
     }
 }

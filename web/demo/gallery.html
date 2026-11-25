@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rough-figure gallery</title>
+<style>
+  body { margin: 0; font: 16px/1.6 ui-sans-serif, system-ui, sans-serif; background: #fbf9f4; color: #23232a; }
+  main { max-width: 1040px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { font-size: 34px; margin: 0 0 4px; color: #3c3278; }
+  p.sub { margin: 0 0 24px; color: #6a6a80; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: #fff; border: 1.5px solid #23232a; border-radius: 14px; padding: 12px; box-shadow: 4px 4px 0 #23232a; }
+  .card h2 { margin: 8px 4px 0; font-size: 16px; display: flex; justify-content: space-between; }
+  .card h2 span { font: 13px ui-monospace, monospace; color: #6a6a80; }
+  #log { position: fixed; right: 16px; bottom: 16px; font: 13px ui-monospace, monospace; background: #17161f; color: #e6e3f4; border-radius: 10px; padding: 10px 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Figures</h1>
+  <p class="sub">Four starter figures. Drag to turn, click a part.</p>
+  <div class="grid" id="grid"></div>
+</main>
+<div id="log">click a part</div>
+<script type="module">
+  import { FigurePlayer } from "../dist/index.js";
+  import { figures } from "../dist/figures/index.js";
+  const grid = document.getElementById("grid"), log = document.getElementById("log");
+  window.players = {};
+  for (const [name, spec] of Object.entries(figures)) {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `<canvas></canvas><h2>${name} <span></span></h2>`;
+    grid.append(card);
+    const span = card.querySelector("span");
+    window.players[name] = await FigurePlayer.create(card.querySelector("canvas"), spec, {
+      loop: true, loopDelay: 2.5,
+      onAction: (e) => { log.textContent = `${name} → ${e.action}`; span.textContent = e.action; },
+    });
+  }
+</script>
+</body>
+</html>

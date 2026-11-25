@@ -39,6 +39,11 @@ pub enum Pass {
     Ink,
 }
 
+/// Distance of `p` along `v`; larger means nearer the viewer.
+pub fn dot(p: Vec3, v: [f32; 3]) -> f32 {
+    p.x * v[0] + p.y * v[1] + p.z * v[2]
+}
+
 /// Everything a geometry needs to draw itself.
 pub struct DrawCtx<'a, 'b> {
     pub pixmap: &'a mut PixmapMut<'b>,
@@ -54,6 +59,8 @@ pub struct DrawCtx<'a, 'b> {
     /// strokes are stable between frames instead of shimmering.
     pub seed: u64,
     pub(crate) draw_count: u64,
+    /// When set, drawing is written here as SVG instead of painted onto the pixmap.
+    pub(crate) svg: Option<&'a mut String>,
 }
 
 impl DrawCtx<'_, '_> {
@@ -69,10 +76,20 @@ impl DrawCtx<'_, '_> {
         make: impl FnOnce(&SkiaGenerator) -> SkiaDrawable<f32>,
     ) {
         let mut opts = style.rough_options(self.base_opts, fill);
+        let ratio = self.camera.pixel_ratio;
+        if ratio != 1.0 {
+            opts.stroke_width = opts.stroke_width.map(|w| w * ratio);
+            opts.hachure_gap = opts.hachure_gap.map(|g| g * ratio);
+        }
         opts.seed = Some(self.seed.wrapping_add(self.draw_count));
         self.draw_count += 1;
         let reveal = style.reveal.clamp(0.0, 1.0);
-        if reveal >= 1.0 {
+        if let Some(out) = self.svg.as_deref_mut() {
+            // Vector output is for finished frames: a partly drawn shape is written whole.
+            if reveal > 0.0 {
+                crate::render::svg::drawable(out, &make(&SkiaGenerator::new(opts)));
+            }
+        } else if reveal >= 1.0 {
             make(&SkiaGenerator::new(opts)).draw(self.pixmap);
         } else if reveal > 0.0 {
             partial::draw(self.pixmap, opts, reveal, make);
@@ -91,6 +108,16 @@ impl DrawCtx<'_, '_> {
         }
         let reveal = style.reveal.clamp(0.0, 1.0);
         let fade = style.opacity * fill.alpha() * partial::fill_progress(reveal.min(1.0));
+        if let Some(out) = self.svg.as_deref_mut() {
+            // A vector page cannot erase, so a transparent paper just skips the patch (the
+            // stage supplies a theme-coloured paper for this case).
+            let mut color = paper;
+            color.set_alpha((paper.alpha() * fade).clamp(0.0, 1.0));
+            if color.alpha() > 0.0 {
+                crate::render::svg::fill(out, &crate::render::svg::contours_d(contours), color, true);
+            }
+            return;
+        }
         if paper.alpha() == 0.0 {
             // A transparent page has no colour to paint, so hide what is behind by erasing it.
             if fade > 0.0 {
@@ -118,7 +145,11 @@ impl DrawCtx<'_, '_> {
     /// text. Does nothing in the underlay pass.
     pub fn fill_exact(&mut self, contours: &[Vec<Point2D<f32>>], color: Color) {
         if self.pass == Pass::Ink {
-            underlay::fill_contours(self.pixmap, contours, color);
+            if let Some(out) = self.svg.as_deref_mut() {
+                crate::render::svg::fill(out, &crate::render::svg::contours_d(contours), color, true);
+            } else {
+                underlay::fill_contours(self.pixmap, contours, color);
+            }
         }
     }
 
@@ -126,7 +157,11 @@ impl DrawCtx<'_, '_> {
     /// for the pen weight of handwritten text. Does nothing in the underlay pass.
     pub fn stroke_exact(&mut self, contours: &[Vec<Point2D<f32>>], color: Color, width: f32) {
         if self.pass == Pass::Ink {
-            underlay::stroke_contours(self.pixmap, contours, color, width);
+            if let Some(out) = self.svg.as_deref_mut() {
+                crate::render::svg::stroke(out, &crate::render::svg::contours_d(contours), color, width);
+            } else {
+                underlay::stroke_contours(self.pixmap, contours, color, width);
+            }
         }
     }
 
@@ -174,11 +209,11 @@ pub trait Geometry {
         None
     }
 
-    /// Fallback depth (larger = nearer the viewer) for objects whose boxes overlap. The viewer
-    /// is on the +x, +y, +z side, so this is `x + y + z`. Default: the object's origin.
-    fn depth(&self, transform: &Transform) -> f32 {
-        let p = transform.position;
-        p.x + p.y + p.z
+    /// Fallback depth (larger = nearer the viewer) for objects whose boxes overlap: the
+    /// distance along `toward_viewer` (see `IsoCamera::toward_viewer`; `(1, 1, 1)` in the
+    /// classic view, so `x + y + z`). Default: the object's origin.
+    fn depth(&self, transform: &Transform, toward_viewer: [f32; 3]) -> f32 {
+        dot(transform.position, toward_viewer)
     }
 
     /// The planar region this geometry is built from, if it has one (flat shapes and prisms).

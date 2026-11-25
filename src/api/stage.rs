@@ -138,6 +138,44 @@ impl Stage {
         Vec3::new(wx, wy, wz)
     }
 
+    /// Draw at `ratio` device pixels per layout pixel, for sharp output on high-density
+    /// screens. Pass the *device* size to `Stage::new` and the same ratio here: line widths,
+    /// hatching, text and arrowheads grow with it, and geometry should be scaled with `zoom`
+    /// and `origin` by the caller.
+    pub fn pixel_ratio(mut self, ratio: f32) -> Self {
+        self.scene.camera_mut().pixel_ratio = ratio.max(0.1);
+        self
+    }
+
+    /// Turn the whole scene about the vertical axis, in radians (`deg(30)`). 0 is the classic
+    /// view. Solids, hidden-surface ordering and wall decals all follow the turn.
+    pub fn yaw(mut self, radians: impl Num) -> Self {
+        self.scene.camera_mut().yaw_rad = radians.f32();
+        self
+    }
+
+    /// Change the turn of an existing stage, e.g. while someone drags to rotate it.
+    pub fn set_yaw(&mut self, radians: f32) {
+        self.scene.camera_mut().yaw_rad = radians;
+    }
+
+    /// The turn of the scene in radians.
+    pub fn current_yaw(&self) -> f32 {
+        self.scene.camera().yaw_rad
+    }
+
+    /// The point in time the scene has been advanced to (0 before any seek).
+    pub fn time(&self) -> f32 {
+        self.played_to.max(0.0)
+    }
+
+    /// The object under screen pixel `(x, y)` (from the top-left of the canvas), with the
+    /// action name it was given by [`Object::action`], if any.
+    pub fn pick(&self, x: f32, y: f32) -> Option<(Id, Option<&str>)> {
+        let id = self.scene.pick(x, y)?;
+        Some((id, self.scene.get(id).and_then(|o| o.action.as_deref())))
+    }
+
     /// Change how hand-drawn everything looks.
     pub fn sketch(mut self, sketch: Sketch) -> Self {
         self.scene.set_options(sketch.options());
@@ -234,6 +272,48 @@ impl Stage {
     /// Seek to `time` and render that frame.
     pub fn render_frame(&mut self, time: f32) -> Pixmap {
         self.seek(time);
+        self.draw_now(time)
+    }
+
+    /// The scene as it is now, as an SVG document: the same strokes and hatching as the raster
+    /// output, as vector paths. Use it for posters and static fallbacks. A shape that is
+    /// partway through `create` is written whole, so export finished frames. With a
+    /// transparent background, hidden lines are removed with the theme's page colour.
+    pub fn to_svg(&mut self) -> String {
+        let t = self.time();
+        let step = self.wobble_fps.map_or(0, |f| (t * f).floor() as u64);
+        let transparent = self.background.alpha() == 0.0;
+        let kept = self.scene.paper;
+        if kept.is_some() {
+            self.scene.paper = Some(if transparent { self.theme.background } else { self.background });
+        }
+        let body = self.scene.render_svg_body(step);
+        self.scene.paper = kept;
+
+        let ratio = self.scene.camera().pixel_ratio;
+        let (w, h) = (self.width as f32, self.height as f32);
+        let mut out = format!(
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {w} {h}\" width=\"{}\" height=\"{}\">\n",
+            w / ratio,
+            h / ratio
+        );
+        if !transparent {
+            let rect = format!("M0 0H{w}V{h}H0Z");
+            crate::render::svg::fill(&mut out, &rect, self.background, false);
+        }
+        out.push_str(&body);
+        out.push_str("</svg>\n");
+        out
+    }
+
+    /// Draw the scene as it is now, without moving time. Use it to redraw after changing
+    /// the yaw while paused.
+    pub fn redraw(&mut self) -> Pixmap {
+        let t = self.time();
+        self.draw_now(t)
+    }
+
+    fn draw_now(&mut self, time: f32) -> Pixmap {
         let mut pixmap = Pixmap::new(self.width, self.height).expect("non-zero canvas size");
         pixmap.fill(self.background);
         // Occluding patches must match the page, whatever colour it is.
