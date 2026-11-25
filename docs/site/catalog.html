@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Figure library · Rough-Animations</title>
+<style>
+  :root { --paper:#fbf9f4; --ink:#23232a; --indigo:#3c3278; --stone:#6a6a80; --line:#e4ded0; --soft:#f3efe6; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:16px/1.6 ui-sans-serif,-apple-system,"Inter",system-ui,sans-serif; background:var(--paper); color:var(--ink); }
+  header { max-width:1160px; margin:0 auto; padding:44px 24px 12px; }
+  h1 { margin:0; font-size:40px; color:var(--indigo); letter-spacing:-.01em; }
+  header p { margin:6px 0 0; color:var(--stone); max-width:640px; }
+  .bar { max-width:1160px; margin:0 auto; padding:18px 24px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; position:sticky; top:0; background:color-mix(in srgb,var(--paper) 90%,transparent); backdrop-filter:blur(8px); z-index:5; border-bottom:1px solid var(--line); }
+  input[type=search], select { font:inherit; padding:8px 12px; border:1.5px solid var(--line); border-radius:9px; background:#fff; }
+  input[type=search] { flex:1; min-width:180px; }
+  input[type=search]:focus, select:focus { outline:0; border-color:var(--indigo); }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .chip { font:inherit; font-size:14px; font-weight:600; padding:6px 13px; border-radius:99px; border:1.5px solid var(--line); background:#fff; color:var(--stone); cursor:pointer; }
+  .chip[aria-pressed=true] { background:var(--ink); border-color:var(--ink); color:#fff; }
+  main { max-width:1160px; margin:0 auto; padding:24px 24px 90px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:22px; }
+  .card { background:#fff; border:1.5px solid var(--ink); border-radius:14px; box-shadow:4px 4px 0 var(--ink); overflow:hidden; cursor:pointer; text-align:left; padding:0; font:inherit; color:inherit; display:flex; flex-direction:column; transition:transform .12s, box-shadow .12s; }
+  .card:hover { transform:translate(-1px,-1px); box-shadow:6px 6px 0 var(--ink); }
+  .card canvas { width:100%; height:auto; display:block; background:var(--paper); }
+  .card .meta { padding:10px 14px 14px; border-top:1px solid var(--line); }
+  .card h2 { margin:0; font-size:17px; display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .card h2 small { font:12px ui-monospace,monospace; color:var(--stone); font-weight:400; }
+  .card p { margin:4px 0 0; font-size:13.5px; color:var(--stone); }
+  .empty { text-align:center; color:var(--stone); padding:60px 0; display:none; }
+  dialog { width:min(980px,94vw); max-height:92vh; border:1.5px solid var(--ink); border-radius:16px; padding:0; box-shadow:8px 8px 0 var(--ink); background:var(--paper); color:var(--ink); }
+  dialog::backdrop { background:rgba(35,35,42,.45); }
+  .d-in { display:grid; grid-template-columns:1.15fr 1fr; gap:0; }
+  @media (max-width:800px) { .d-in { grid-template-columns:1fr; } }
+  .d-fig { background:#fff; border-right:1.5px solid var(--line); padding:14px; }
+  .d-fig canvas { width:100%; height:auto; display:block; }
+  .d-ctl { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  button.s { font:inherit; font-size:14px; padding:5px 12px; border:1.5px solid var(--ink); border-radius:8px; background:#fff; cursor:pointer; }
+  button.s:hover { background:var(--soft); }
+  .d-txt { padding:18px 20px; overflow:auto; max-height:92vh; }
+  .d-txt h2 { margin:0; font-size:26px; color:var(--indigo); }
+  .d-txt h3 { margin:18px 0 6px; font:600 12px ui-monospace,monospace; text-transform:uppercase; letter-spacing:.08em; color:var(--stone); }
+  .close { float:right; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  td { padding:5px 8px 5px 0; vertical-align:top; border-bottom:1px solid var(--line); }
+  td:first-child { font:13px ui-monospace,monospace; white-space:nowrap; }
+  td.hit { background:#ece6ff; }
+  .tabs { display:flex; gap:4px; margin-bottom:6px; }
+  .tabs button { font:inherit; font-size:13px; font-weight:600; border:0; background:transparent; color:var(--stone); padding:4px 10px; border-radius:99px; cursor:pointer; }
+  .tabs button[aria-selected=true] { background:var(--ink); color:#fff; }
+  pre { margin:0; background:#17161f; color:#e6e3f4; border-radius:10px; padding:12px 14px; font:12.5px/1.6 ui-monospace,monospace; overflow:auto; white-space:pre; }
+  .last { font:13px ui-monospace,monospace; color:var(--stone); margin-top:8px; }
+</style>
+</head>
+<body>
+<div style="background:#23232a;color:#fff;font:14px ui-sans-serif,system-ui,sans-serif;padding:8px 24px;display:flex;gap:18px;align-items:center"><a href="index.html" style="color:#fff;text-decoration:none;font-weight:700">Rough-Animations</a><a href="docs.html" style="color:#cfcbe6;text-decoration:none">Docs</a><a href="docs.html#web-figures" style="color:#cfcbe6;text-decoration:none">About the library</a><span style="flex:1"></span><a href="https://github.com/Super-Yojan/Rough-Animations" style="color:#cfcbe6;text-decoration:none">GitHub</a></div>
+<header>
+  <h1>Figure library</h1>
+  <p>Hand-drawn 3D figures for product UI: empty states, errors, loaders and more. Each one turns when you drag it and reports clicks on its parts.</p>
+</header>
+<div class="bar">
+  <input id="q" type="search" placeholder="Search figures…" aria-label="Search figures">
+  <div class="chips" id="chips"></div>
+  <select id="theme" aria-label="Theme"><option>light</option><option>dark</option><option>chalkboard</option><option>blueprint</option><option>sepia</option><option>terminal</option></select>
+</div>
+<main>
+  <div class="grid" id="grid"></div>
+  <p class="empty" id="none">No figures match.</p>
+</main>
+
+<dialog id="dlg">
+  <div class="d-in">
+    <div class="d-fig">
+      <canvas id="dcanvas"></canvas>
+      <div class="d-ctl">
+        <button class="s" id="d-replay">Replay</button>
+        <button class="s" id="d-svg">Download SVG</button>
+        <button class="s" id="d-png">Download PNG</button>
+      </div>
+      <div class="last" id="d-last">Click a part of the figure.</div>
+    </div>
+    <div class="d-txt">
+      <button class="s close" id="d-close">Close</button>
+      <h2 id="d-title"></h2>
+      <p id="d-desc" style="color:var(--stone);margin:4px 0 0"></p>
+      <h3>Clickable parts</h3>
+      <table id="d-actions"></table>
+      <h3>Use it</h3>
+      <div class="tabs" id="d-tabs"></div>
+      <pre id="d-code"></pre>
+    </div>
+  </div>
+</dialog>
+
+<script type="module">
+  import { FigurePlayer } from "./engine/index.js";
+  import { library, categories } from "./engine/library/index.js";
+
+  const $ = (id) => document.getElementById(id);
+  const state = { q: "", cat: "all", theme: "light" };
+  const players = new Map();       // figure id -> FigurePlayer (card previews, created when visible)
+  let detail = null, detailMeta = null;
+
+  const withTheme = (spec) => ({ ...spec, theme: state.theme });
+
+  // ---- chips -----------------------------------------------------------------------------
+  for (const c of [{ id: "all", title: "All" }, ...categories]) {
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = c.title; b.dataset.id = c.id;
+    b.setAttribute("aria-pressed", String(c.id === "all"));
+    b.onclick = () => { state.cat = c.id; for (const x of $("chips").children) x.setAttribute("aria-pressed", String(x.dataset.id === c.id)); render(); };
+    $("chips").append(b);
+  }
+
+  // ---- grid ------------------------------------------------------------------------------
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting || e.target.dataset.live) continue;
+      e.target.dataset.live = "1";
+      const meta = library.find((f) => f.id === e.target.dataset.id);
+      FigurePlayer.create(e.target, withTheme(meta.spec), { loop: true, loopDelay: 2.2, interactive: false })
+        .then((p) => players.set(meta.id, p)).catch(console.error);
+    }
+  }, { rootMargin: "200px" });
+
+  function matches(f) {
+    if (state.cat !== "all" && f.category !== state.cat) return false;
+    const q = state.q.trim().toLowerCase();
+    return !q || [f.title, f.name, f.id, f.description, ...f.tags].join(" ").toLowerCase().includes(q);
+  }
+
+  function render() {
+    for (const p of players.values()) p.destroy();
+    players.clear();
+    $("grid").replaceChildren();
+    const shown = library.filter(matches);
+    $("none").style.display = shown.length ? "none" : "block";
+    for (const f of shown) {
+      const card = document.createElement("button");
+      card.className = "card";
+      card.innerHTML = `<canvas data-id="${f.id}" aria-hidden="true"></canvas>
+        <div class="meta"><h2>${f.title}<small>&lt;${f.name} /&gt;</small></h2><p>${f.description}</p></div>`;
+      card.onclick = () => openDetail(f);
+      $("grid").append(card);
+      io.observe(card.querySelector("canvas"));
+    }
+  }
+  $("q").oninput = (e) => { state.q = e.target.value; render(); };
+  $("theme").onchange = (e) => { state.theme = e.target.value; render(); if (detail) detail.setTheme(state.theme); };
+
+  // ---- detail ----------------------------------------------------------------------------
+  const snippets = (f) => {
+    const names = f.actions.map((a) => `"${a.name}"`).join(" | ") || "never";
+    return {
+      React: `import { ${f.name} } from "rough-figure/library/react";\n\nexport function Example() {\n  return (\n    <${f.name}\n      loop\n      size={420}\n      onAction={(e) => {\n        // e.action: ${names}\n        console.log(e.action);\n      }}\n    />\n  );\n}`,
+      "HTML element": `<script type="module" src="rough-figure/element"><\/script>\n\n<rough-figure figure="${f.id}" loop></rough-figure>\n\n<script>\n  document.querySelector("rough-figure")\n    .addEventListener("action", (e) => console.log(e.detail.action));\n<\/script>`,
+      TypeScript: `import { FigurePlayer } from "rough-figure";\nimport { ${f.id.replace(/-(.)/g, (_, c) => c.toUpperCase())} } from "rough-figure/library";\n\nconst player = await FigurePlayer.create(canvas, ${f.id.replace(/-(.)/g, (_, c) => c.toUpperCase())}.spec, {\n  loop: true,\n  onAction: ({ action }) => console.log(action),\n});`,
+    };
+  };
+
+  async function openDetail(f) {
+    detailMeta = f;
+    $("d-title").textContent = f.title;
+    $("d-desc").textContent = f.description;
+    $("d-actions").innerHTML = f.actions.length
+      ? f.actions.map((a) => `<tr data-a="${a.name}"><td>${a.name}</td><td><b>${a.label}.</b> ${a.description}</td></tr>`).join("")
+      : `<tr><td colspan="2">None. This one is just to look at.</td></tr>`;
+    const code = snippets(f);
+    $("d-tabs").replaceChildren();
+    Object.entries(code).forEach(([name, text], i) => {
+      const b = document.createElement("button");
+      b.textContent = name; b.setAttribute("aria-selected", String(i === 0));
+      b.onclick = () => { $("d-code").textContent = text; for (const x of $("d-tabs").children) x.setAttribute("aria-selected", String(x === b)); };
+      $("d-tabs").append(b);
+    });
+    $("d-code").textContent = Object.values(code)[0];
+    $("d-last").textContent = f.actions.length ? "Click a part of the figure." : "Drag to turn it.";
+    $("dlg").showModal();
+    detail?.destroy();
+    detail = await FigurePlayer.create($("dcanvas"), withTheme(f.spec), {
+      loop: true, loopDelay: 2.5, pixelRatio: Math.min(devicePixelRatio, 2),
+      onAction: ({ action, id }) => {
+        $("d-last").textContent = `onAction → { action: "${action}", id: "${id}" }`;
+        for (const r of $("d-actions").querySelectorAll("tr")) r.firstElementChild.classList.toggle("hit", r.dataset.a === action);
+      },
+    });
+  }
+  const closeDetail = () => { detail?.destroy(); detail = null; $("dlg").close(); };
+  $("d-close").onclick = closeDetail;
+  $("dlg").addEventListener("close", () => { detail?.destroy(); detail = null; });
+  $("d-replay").onclick = () => detail?.replay();
+  const download = (blob, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
+  $("d-svg").onclick = () => { if (!detail) return; const t = detail.time; detail.seek(detail.duration); download(new Blob([detail.toSVG()], { type: "image/svg+xml" }), `${detailMeta.id}.svg`); detail.seek(t); };
+  $("d-png").onclick = async () => { if (!detail) return; const t = detail.time; detail.seek(detail.duration); download(await detail.toBlob(), `${detailMeta.id}.png`); detail.seek(t); };
+
+  render();
+  window.catalog = { library, players, get detail() { return detail; } };
+</script>
+</body>
+</html>

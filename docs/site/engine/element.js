@@ -1,0 +1,118 @@
+import { FigurePlayer } from "./player.js";
+/**
+ * `<rough-figure>`: drop a figure into any page.
+ *
+ *   <rough-figure src="/figures/inbox.json" theme="dark" loop></rough-figure>
+ *
+ * or put the description inline:
+ *
+ *   <rough-figure><script type="application/json">{ "width": 900, ... }</script></rough-figure>
+ *
+ * Attributes: `figure` (a library figure by id, e.g. `figure="empty-inbox"`), `src`, `theme`, `look`, `yaw`, `speed`, `loop`, `static` (show the end, no
+ * autoplay), `fixed` (no dragging or clicking). Events: `ready`, `error`, and `action`
+ * (`event.detail` is `{ action, id }`).
+ */
+export class RoughFigureElement extends HTMLElement {
+    static observedAttributes = ["src", "figure", "theme", "look", "yaw", "speed"];
+    #player;
+    #canvas = document.createElement("canvas");
+    #gen = 0;
+    /** The running player, once the figure is ready. */
+    get player() { return this.#player; }
+    connectedCallback() {
+        const root = this.shadowRoot ?? this.attachShadow({ mode: "open" });
+        root.innerHTML = `<style>
+      :host { display: block; max-width: 100%; }
+      canvas { width: 100%; height: auto; display: block; outline-offset: 4px; }
+    </style>`;
+        root.append(this.#canvas);
+        this.#canvas.setAttribute("aria-label", this.getAttribute("aria-label") ?? "Interactive illustration");
+        void this.#load();
+    }
+    disconnectedCallback() {
+        this.#gen++;
+        this.#player?.destroy();
+        this.#player = undefined;
+    }
+    attributeChangedCallback(name, _old, value) {
+        const p = this.#player;
+        if (!p || value === null) {
+            if (name === "src" && this.isConnected && this.#player)
+                void this.#load();
+            return;
+        }
+        if (name === "theme")
+            p.setTheme(value);
+        else if (name === "look")
+            p.setLook(value);
+        else if (name === "yaw")
+            p.setYaw(Number(value));
+        else if (name === "speed")
+            p.setSpeed(Number(value));
+        else if (name === "src" || name === "figure")
+            void this.#load();
+    }
+    async #spec() {
+        const named = this.getAttribute("figure");
+        if (named) {
+            const { figureById } = await import("./library/index.js");
+            const meta = figureById(named);
+            if (!meta)
+                throw new Error(`rough-figure: no library figure named "${named}"`);
+            return meta.spec;
+        }
+        const src = this.getAttribute("src");
+        if (src) {
+            const res = await fetch(src);
+            if (!res.ok)
+                throw new Error(`rough-figure: could not load ${src} (${res.status})`);
+            return res.text();
+        }
+        const inline = this.querySelector('script[type="application/json"]');
+        if (!inline?.textContent)
+            throw new Error("rough-figure: give it a src or an inline JSON <script>");
+        return inline.textContent;
+    }
+    async #load() {
+        const gen = ++this.#gen;
+        this.#player?.destroy();
+        this.#player = undefined;
+        try {
+            let spec = await this.#spec();
+            if (gen !== this.#gen)
+                return;
+            const theme = this.getAttribute("theme");
+            const yaw = this.getAttribute("yaw");
+            if (theme || yaw) {
+                const obj = typeof spec === "string" ? JSON.parse(spec) : spec;
+                if (theme)
+                    obj.theme = theme;
+                if (yaw)
+                    obj.yaw = Number(yaw);
+                spec = JSON.stringify(obj);
+            }
+            const player = await FigurePlayer.create(this.#canvas, spec, {
+                autoplay: !this.hasAttribute("static"),
+                loop: this.hasAttribute("loop"),
+                interactive: !this.hasAttribute("fixed"),
+                speed: Number(this.getAttribute("speed") ?? 1),
+                onAction: (detail) => this.dispatchEvent(new CustomEvent("action", { detail, bubbles: true, composed: true })),
+            });
+            if (gen !== this.#gen) {
+                player.destroy();
+                return;
+            }
+            this.#player = player;
+            const look = this.getAttribute("look");
+            if (look)
+                player.setLook(look);
+            this.dispatchEvent(new CustomEvent("ready"));
+        }
+        catch (e) {
+            this.dispatchEvent(new CustomEvent("error", { detail: e }));
+            console.error(e);
+        }
+    }
+}
+if (!customElements.get("rough-figure"))
+    customElements.define("rough-figure", RoughFigureElement);

@@ -10,12 +10,12 @@ import type { FigureSpec, ThemeName } from "./spec.js";
  *
  *   <rough-figure><script type="application/json">{ "width": 900, ... }</script></rough-figure>
  *
- * Attributes: `src`, `theme`, `look`, `yaw`, `speed`, `loop`, `static` (show the end, no
+ * Attributes: `figure` (a library figure by id, e.g. `figure="empty-inbox"`), `src`, `theme`, `look`, `yaw`, `speed`, `loop`, `static` (show the end, no
  * autoplay), `fixed` (no dragging or clicking). Events: `ready`, `error`, and `action`
  * (`event.detail` is `{ action, id }`).
  */
 export class RoughFigureElement extends HTMLElement {
-  static observedAttributes = ["src", "theme", "look", "yaw", "speed"];
+  static observedAttributes = ["src", "figure", "theme", "look", "yaw", "speed"];
   #player: FigurePlayer | undefined;
   #canvas = document.createElement("canvas");
   #gen = 0;
@@ -47,10 +47,17 @@ export class RoughFigureElement extends HTMLElement {
     else if (name === "look") p.setLook(value as "sketch" | "clean");
     else if (name === "yaw") p.setYaw(Number(value));
     else if (name === "speed") p.setSpeed(Number(value));
-    else if (name === "src") void this.#load();
+    else if (name === "src" || name === "figure") void this.#load();
   }
 
   async #spec(): Promise<FigureSpec | string> {
+    const named = this.getAttribute("figure");
+    if (named) {
+      const { figureById } = await import("./library/index.js");
+      const meta = figureById(named);
+      if (!meta) throw new Error(`rough-figure: no library figure named "${named}"`);
+      return meta.spec;
+    }
     const src = this.getAttribute("src");
     if (src) {
       const res = await fetch(src);

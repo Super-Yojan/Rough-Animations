@@ -237,6 +237,12 @@ const spec = figure({
 await FigurePlayer.create(canvas, spec, { onAction: ({ action }) => console.log(action) });
 ```
 
+It also ships a library of eleven ready-made figures (`EmptyInbox`, `NotFound`, `Loading`, `Success`, ...) as
+typed React components, a `<rough-figure figure="...">` element and a browsable catalog:
+[the live catalog](https://super-yojan.github.io/Rough-Animations/catalog.html) on the docs site, or
+`pnpm demo` then `/catalog/` locally. After changing the engine or a figure, run `scripts/build-site.sh` to
+refresh the copy the docs site serves.
+
 Scenes are plain JSON (`src/spec.rs`), so they can also be written by hand or generated. Build it with
 `scripts/build-web.sh` and see the full guide in [`web/README.md`](web/README.md) and the
 [docs site](docs/site/docs.html#web).

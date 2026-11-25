@@ -25,6 +25,14 @@
     "./figures": {
       "types": "./dist/figures/index.d.ts",
       "default": "./dist/figures/index.js"
+    },
+    "./library": {
+      "types": "./dist/library/index.d.ts",
+      "default": "./dist/library/index.js"
+    },
+    "./library/react": {
+      "types": "./dist/library/react.d.ts",
+      "default": "./dist/library/react.js"
     }
   },
   "files": [

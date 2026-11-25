@@ -14,6 +14,7 @@
   <a class="l" href="#features">Features</a>
   <a class="l" href="#how">How it works</a>
   <a class="l" href="#web">On the web</a>
+  <a class="l" href="catalog.html">Library</a>
   <a class="l" href="#gallery">Gallery</a>
   <a class="l" href="docs.html">Docs</a>
   <span class="sp"></span>
@@ -207,16 +208,16 @@ FigurePlayer.create(canvas, spec, {
 });</code></pre>
     </div>
     <div class="preview">
-      <div class="cap">one scene, four turns of the camera</div>
-      <img src="turn.png" alt="A stack of solids seen from four angles" loading="lazy">
+      <div class="cap">live, rendered by the engine in your browser: drag to turn, click the rocket</div>
+      <rough-figure figure="rocket" loop aria-label="A rocket on its pad. Drag to turn it."></rough-figure>
     </div>
   </div>
   <div class="features" style="margin-top:28px">
     <div class="feat"><div class="ic" style="background:var(--purple)">↻</div><h3>Drag to turn</h3><p>Real 3D rotation: depth order, hidden faces and wall decals follow the camera, with a fling when you let go.</p></div>
     <div class="feat"><div class="ic" style="background:var(--mint)">☝</div><h3>Clickable parts</h3><p>Give a part an <code>action</code> and it highlights on hover and reports its name when clicked.</p></div>
-    <div class="feat"><div class="ic" style="background:var(--amber)">▭</div><h3>Components</h3><p>A typed builder API, a <code>&lt;rough-figure&gt;</code> element, a React component, SVG posters and four starter figures.</p></div>
+    <div class="feat"><div class="ic" style="background:var(--amber)">▭</div><h3>A figure library</h3><p>Eleven ready-made figures (empty inbox, 404, loader, success, ...) as typed React components or <code>&lt;rough-figure figure="..."&gt;</code>, with a browsable catalog.</p></div>
   </div>
-  <div class="cta" style="margin-top:28px"><a class="btn primary" href="docs.html#web">Read the web guide →</a></div>
+  <div class="cta" style="margin-top:28px"><a class="btn primary" href="docs.html#web">Read the web guide →</a><a class="btn ghost" href="catalog.html">Browse the figure library</a></div>
 </section>
 
 <section class="blk" id="gallery">
@@ -257,5 +258,6 @@ $S/frame.sh target/out.mp4 -0.5 target/end.png</code></pre></div>
 
 <footer>Rough-Animations · built on roughr, tiny-skia and i_overlay · font: Patrick Hand (SIL OFL 1.1) · landing-page references from Mobbin (Vercel, Height, Anchor, Bird)</footer>
 <script src="site.js"></script>
+<script type="module" src="engine/element.js"></script>
 </body>
 </html>

@@ -19,7 +19,7 @@ cargo install wasm-bindgen-cli --version "$(grep -A1 'name = "wasm-bindgen"$' ..
 pnpm install
 pnpm build:wasm      # Rust -> web/src/wasm
 pnpm build           # TypeScript -> dist (and copies the wasm next to it)
-pnpm demo            # http://localhost:5173/demo/
+pnpm demo            # http://localhost:5173/catalog/  (also /demo/ and /demo/gallery.html)
 ```
 
 ## Use it
@@ -68,17 +68,49 @@ import { RoughFigure } from "rough-figure/react";
 <RoughFigure spec={spec} theme="dark" loop onAction={(e) => navigate(e.action)} />;
 ```
 
-### Starter figures
+### Component library
 
-```ts
-import { figures } from "rough-figure/figures";   // inbox, settings, rocket, servers
+Eleven ready-made figures for product UI, each a named component with typed props:
 
-FigurePlayer.create(canvas, figures.rocket, { onAction: ({ action }) => console.log(action) });
+| Component (id) | Category | Actions |
+|---|---|---|
+| `EmptyInbox` (`empty-inbox`) | Empty states | `compose`, `open` |
+| `Upload` (`upload`) | Empty states | `upload` |
+| `NotFound` (`not-found`) | Errors | `home`, `search` |
+| `AccessDenied` (`access-denied`) | Errors | `unlock` |
+| `Loading` (`loading`) | Loaders | none |
+| `Success` (`success`) | Status | `open` |
+| `Notifications` (`notifications`) | Status | `open`, `dismiss` |
+| `Servers` (`servers`) | Status | `unit-1`, `unit-2`, `unit-3` |
+| `Analytics` (`analytics`) | Product | `report`, `trend` |
+| `Settings` (`settings`) | Product | `settings`, `tune` |
+| `Rocket` (`rocket`) | Onboarding | `launch`, `fins` |
+
+```tsx
+import { EmptyInbox } from "rough-figure/library/react";
+
+<EmptyInbox loop size={420} onAction={(e) => e.action === "compose" && openComposer()} />;
+//                                         ^ typed: "compose" | "open"
 ```
 
-Four original figures built from simple solids, each with clickable parts (`compose`, `settings`,
-`launch`, `unit-1`, ...). They are ordinary `FigureSpec` values: copy one and change it. `pnpm demo`
-then open `/demo/gallery.html` to see them all.
+```html
+<rough-figure figure="not-found" loop></rough-figure>
+```
+
+```ts
+import { library, figureById } from "rough-figure/library";   // metadata: title, tags, actions, spec
+```
+
+Run `pnpm demo` and open `/catalog/` for a browsable catalog: search, category filter, theme switcher,
+live previews, usage snippets (React, HTML element, TypeScript) and SVG/PNG download for each figure.
+
+Add your own with `defineFigure({ id, name, title, description, category, tags, actions, spec })`.
+`pnpm test` loads every figure into the real engine and checks that ids are unique, that the declared
+actions are exactly the ones the parts use, that timelines only name objects that exist, that each
+figure draws and survives every theme, and that every declared action can really be clicked. The
+figures are starter quality: simple solids, easy to restyle, not finished illustrations.
+
+(`rough-figure/figures` still exports the first four as plain specs.)
 
 ### Static posters (SVG and PNG)
 

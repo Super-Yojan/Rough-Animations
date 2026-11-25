@@ -12,6 +12,7 @@
   <a class="brand" href="index.html"><i></i>Rough-Animations</a>
   <a class="l" href="index.html#features">Features</a>
   <a class="l" href="index.html#gallery">Gallery</a>
+  <a class="l" href="catalog.html">Library</a>
   <a class="l" href="docs.html"><b>Docs</b></a>
   <span class="sp"></span>
   <a class="l" href="https://github.com/Super-Yojan/Rough-Animations">GitHub</a>
@@ -52,7 +53,7 @@
   <a href="#web-figure" data-k="json spec objects timeline builders">Describing a figure</a>
   <a href="#web-interaction" data-k="drag turn hover click action pick keyboard">Turning &amp; clicking</a>
   <a href="#web-components" data-k="element react player canvas events">Components</a>
-  <a href="#web-figures" data-k="library inbox rocket gears servers starter">Starter figures</a>
+  <a href="#web-figures" data-k="library components inbox rocket gears servers catalog react empty states errors loaders">Component library</a>
   <a href="#web-posters" data-k="svg png poster export static fallback">Posters (SVG, PNG)</a>
   <a href="#web-notes" data-k="retina pixel ratio performance limits">Notes &amp; limits</a>
   <h4>Output</h4>
@@ -452,7 +453,7 @@ cargo install wasm-bindgen-cli --version "$(grep -A1 'name = "wasm-bindgen"$' Ca
 cd web && pnpm install
 pnpm build:wasm     # Rust to WebAssembly (runs scripts/build-web.sh)
 pnpm build          # TypeScript to dist/, with the wasm copied next to it
-pnpm demo           # http://localhost:5173/demo/  and  /demo/gallery.html</code></pre></div>
+pnpm demo           # http://localhost:5173/catalog/  (also /demo/ and /demo/gallery.html)</code></pre></div>
 <p>The wasm file is about 1.7 MB (about 570 KB gzipped). The engine's <code>spec</code> and <code>web</code> Cargo features add JSON scenes and the WebAssembly entry point; the plain Rust library does not need them.</p>
 
 <h3 id="web-first">A first figure</h3>
@@ -539,6 +540,14 @@ toJSON(gear);   // the JSON the engine reads</code></pre></div>
 <li><strong>Time.</strong> <code>play</code>, <code>pause</code>, <code>replay</code>, <code>seek(t)</code> and <code>scrub(0..1)</code> control the timeline. Looping holds the finished figure for <code>loopDelay</code> seconds before restarting. With <code>prefers-reduced-motion</code> the figure starts finished.</li>
 <li><strong>Cheap when idle.</strong> It draws only when something changes, and stops while scrolled out of view.</li>
 </ul>
+<p>Try it: this is the <code>servers</code> figure. Drag to turn it, click a server.</p>
+<div class="live one"><div class="cell"><rough-figure id="live-demo" figure="servers" loop aria-label="Three servers. Drag to turn, click one."></rough-figure></div></div>
+<p class="live-log" id="live-log">Click a server…</p>
+<script>
+  document.getElementById("live-demo").addEventListener("action", (e) => {
+    document.getElementById("live-log").textContent = `action event → { action: "${e.detail.action}", id: "${e.detail.id}" }`;
+  });
+</script>
 <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>scroll-driven</span><button>copy</button></div>
 <pre><code data-lang="ts">// Tie the timeline to scroll position (a "story" figure).
 addEventListener("scroll", () => {
@@ -586,19 +595,63 @@ addEventListener("scroll", () => {
 &lt;RoughFigure spec={spec} theme="dark" loop onAction={(e) =&gt; navigate(e.action)} /&gt;;</code></pre></div>
 <p>The figure restarts when <code>spec</code> changes (compared by value). <code>theme</code>, <code>look</code>, <code>yaw</code> and <code>speed</code> update live without a restart.</p>
 
-<h2 id="web-figures">Starter figures</h2>
-<p>Four original figures built from simple solids, each with clickable parts. They are ordinary figure values: copy one and change it.</p>
+<h2 id="web-figures">Component library</h2>
+<p>Eleven ready-made figures for product UI, each a named component with typed props. Pick one, drop it in, and wire its clickable parts to your own actions. These three are live, running the engine in your browser, so drag them and click their parts:</p>
+<div class="live">
+  <div class="cell"><rough-figure figure="empty-inbox" loop aria-label="Empty inbox"></rough-figure><small>&lt;EmptyInbox /&gt;</small></div>
+  <div class="cell"><rough-figure figure="not-found" loop aria-label="Not found, 404"></rough-figure><small>&lt;NotFound /&gt;</small></div>
+  <div class="cell"><rough-figure figure="success" loop aria-label="Success"></rough-figure><small>&lt;Success /&gt;</small></div>
+</div>
+<p><a class="btn primary" href="catalog.html">Open the live catalog →</a> It has all eleven with search, a theme switcher, a usage snippet for React, the HTML element and TypeScript, and SVG/PNG download. To run it from the repo instead, use <code>pnpm demo</code> and open <code>/catalog/</code>.</p>
 <table>
-<tr><th>Figure</th><th>Shows</th><th>Actions</th></tr>
-<tr><td><code>inbox</code></td><td>An open tray with an envelope dropping in</td><td><code>compose</code> (tray), <code>open</code> (envelope)</td></tr>
-<tr><td><code>settings</code></td><td>Two gears that turn</td><td><code>settings</code>, <code>tune</code></td></tr>
-<tr><td><code>rocket</code></td><td>A rocket lifting off its pad</td><td><code>launch</code>, <code>fins</code></td></tr>
-<tr><td><code>servers</code></td><td>Three servers with status lights</td><td><code>unit-1</code>, <code>unit-2</code>, <code>unit-3</code></td></tr>
+<tr><th>Component</th><th>Category</th><th>Shows</th><th>Actions</th></tr>
+<tr><td><code>EmptyInbox</code><br><small><code>empty-inbox</code></small></td><td>Empty states</td><td>An open tray with an envelope dropping in. For inboxes, notifications and message lists with nothing in them yet.</td><td><code>compose</code> <code>open</code></td></tr>
+<tr><td><code>Upload</code><br><small><code>upload</code></small></td><td>Empty states</td><td>A file lifting off a tray with an arrow. For upload areas, imports and drop zones.</td><td><code>upload</code></td></tr>
+<tr><td><code>NotFound</code><br><small><code>not-found</code></small></td><td>Errors</td><td>Three blocks spelling 404, the last one knocked over. For missing pages and empty search results.</td><td><code>home</code> <code>search</code></td></tr>
+<tr><td><code>AccessDenied</code><br><small><code>access-denied</code></small></td><td>Errors</td><td>A padlock whose shackle lifts. For permission errors, locked content and sign-in walls.</td><td><code>unlock</code></td></tr>
+<tr><td><code>Loading</code><br><small><code>loading</code></small></td><td>Loaders</td><td>Three cubes hopping in turn. Loop it for a spinner with some character.</td><td>none</td></tr>
+<tr><td><code>Success</code><br><small><code>success</code></small></td><td>Status</td><td>A wrapped gift with a bow and stars popping. For completed actions, rewards and confirmations.</td><td><code>open</code></td></tr>
+<tr><td><code>Notifications</code><br><small><code>notifications</code></small></td><td>Status</td><td>A bell with an unread badge. For notification settings, alerts and reminders.</td><td><code>open</code> <code>dismiss</code></td></tr>
+<tr><td><code>Servers</code><br><small><code>servers</code></small></td><td>Status</td><td>A stack of three servers with status lights. For infrastructure, hosting and system status.</td><td><code>unit-1</code> <code>unit-2</code> <code>unit-3</code></td></tr>
+<tr><td><code>Analytics</code><br><small><code>analytics</code></small></td><td>Product</td><td>Five bars growing with a trend arrow. For dashboards, reports and growth screens.</td><td><code>report</code> <code>trend</code></td></tr>
+<tr><td><code>Settings</code><br><small><code>settings</code></small></td><td>Product</td><td>Two gears that turn. For settings pages, preferences and configuration screens.</td><td><code>settings</code> <code>tune</code></td></tr>
+<tr><td><code>Rocket</code><br><small><code>rocket</code></small></td><td>Onboarding</td><td>A rocket lifting off its pad. For onboarding, launches and getting-started screens.</td><td><code>launch</code> <code>fins</code></td></tr>
 </table>
-<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>figures.ts</span><button>copy</button></div>
-<pre><code data-lang="ts">import { figures } from "rough-figure/figures";
+<h3>In React</h3>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>Empty.tsx</span><button>copy</button></div>
+<pre><code data-lang="ts">import { EmptyInbox } from "rough-figure/library/react";
 
-FigurePlayer.create(canvas, figures.rocket, { onAction: ({ action }) =&gt; launch(action) });</code></pre></div>
+export function Inbox() {
+  return (
+    &lt;EmptyInbox
+      loop
+      size={420}
+      theme="dark"
+      onAction={(e) =&gt; {
+        // e.action is typed: "compose" | "open"
+        if (e.action === "compose") openComposer();
+      }}
+    /&gt;
+  );
+}</code></pre></div>
+<p>Every component takes the same props: <code>onAction</code> (with the figure's own action names as a type), <code>size</code> (largest width in CSS pixels), <code>label</code> (accessible description), <code>theme</code>, <code>look</code>, <code>yaw</code>, <code>loop</code>, <code>autoplay</code>, <code>interactive</code>, <code>speed</code>, <code>className</code> and <code>style</code>.</p>
+<h3>As an HTML element</h3>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>index.html</span><button>copy</button></div>
+<pre><code data-lang="text">&lt;script type="module" src="rough-figure/element"&gt;&lt;/script&gt;
+
+&lt;rough-figure figure="not-found" loop&gt;&lt;/rough-figure&gt;</code></pre></div>
+<h3>As data</h3>
+<div class="win"><div class="win-bar"><i></i><i></i><i></i><span>library.ts</span><button>copy</button></div>
+<pre><code data-lang="ts">import { library, figureById, categories } from "rough-figure/library";
+
+figureById("success")?.actions;                    // [{ name: "open", label: "Gift", description: "..." }]
+library.filter((f) =&gt; f.category === "errors");   // build your own picker
+FigurePlayer.create(canvas, figureById("loading")!.spec, { loop: true });</code></pre></div>
+<h3>Keeping the site's copy current</h3>
+<p>GitHub Pages only serves static files, so the live figures use a built copy of the engine in <code>docs/site/engine/</code> (and the catalog page <code>docs/site/catalog.html</code>). After changing the engine, the library or a figure, run <code>scripts/build-site.sh</code> and commit the result.</p>
+<h3>Adding your own figure</h3>
+<p>A library figure is a <code>defineFigure({..})</code> call: an id, a component name, a category, tags, the list of clickable <code>actions</code> and a figure spec. The test suite (<code>pnpm test</code>) loads every figure into the real engine and checks that ids are unique, that the declared actions are exactly the ones the parts use, that timelines only name objects that exist, that each figure draws, survives every theme, and that every declared action can really be clicked.</p>
+<div class="note"><b>Note</b> The figures are starter quality: simple solids, drawn to be recognisable and easy to restyle, not finished illustrations.</div>
 
 <h2 id="web-posters">Posters (SVG and PNG)</h2>
 <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>posters.ts</span><button>copy</button></div>
@@ -746,5 +799,6 @@ $S/frame.sh target/out.mp4 -0.5 target/end.png              # a negative time co
 </div>
 
 <script src="site.js"></script>
+<script type="module" src="engine/element.js"></script>
 </body>
 </html>

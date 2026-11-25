@@ -159,3 +159,11 @@ td:first-child { white-space: nowrap; }
 .pager a small { display: block; font: 12px var(--mono); color: var(--stone); }
 .pager a:hover { background: var(--paper-2); }
 .pager a:last-child { text-align: right; }
+
+/* live figures */
+.live { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0; max-width: 860px; }
+.live.one { grid-template-columns: minmax(0, 420px); }
+@media (max-width: 800px) { .live { grid-template-columns: 1fr; } }
+.live .cell { background: #fff; border: 1.5px solid var(--ink); border-radius: 12px; overflow: hidden; box-shadow: 3px 3px 0 var(--ink); }
+.live .cell small { display: block; font: 12px var(--mono); color: var(--stone); padding: 6px 12px; border-top: 1px solid var(--line); }
+.live-log { font: 13px var(--mono); color: var(--stone); margin: -6px 0 18px; }
