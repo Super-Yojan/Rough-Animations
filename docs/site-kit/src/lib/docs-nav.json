@@ -1,0 +1,212 @@
+[
+ {
+  "title": "Start",
+  "items": [
+   {
+    "id": "introduction",
+    "k": "overview what",
+    "title": "Introduction"
+   },
+   {
+    "id": "installation",
+    "k": "requirements ffmpeg latex cargo",
+    "title": "Installation"
+   },
+   {
+    "id": "quick-start",
+    "k": "hello first",
+    "title": "Quick start"
+   }
+  ]
+ },
+ {
+  "title": "Concepts",
+  "items": [
+   {
+    "id": "world",
+    "k": "coordinates axes isometric origin",
+    "title": "The world"
+   },
+   {
+    "id": "stage",
+    "k": "new fps zoom origin background",
+    "title": "Stage"
+   },
+   {
+    "id": "objects",
+    "k": "add builders fill stroke opacity id",
+    "title": "Objects & builders"
+   },
+   {
+    "id": "colors",
+    "k": "colour hex palette",
+    "title": "Colours"
+   }
+  ]
+ },
+ {
+  "title": "Drawing",
+  "items": [
+   {
+    "id": "solids",
+    "k": "cuboid cube cylinder cone sphere prism 3d",
+    "title": "3D solids"
+   },
+   {
+    "id": "flat-shapes",
+    "k": "circle rect star polygon ngon plane on 2d",
+    "title": "Flat shapes"
+   },
+   {
+    "id": "booleans",
+    "k": "union minus intersect xor extrude hole",
+    "title": "Booleans"
+   },
+   {
+    "id": "lines",
+    "k": "line arrow",
+    "title": "Lines & arrows"
+   },
+   {
+    "id": "text",
+    "k": "label title math latex handwritten font",
+    "title": "Text & LaTeX"
+   }
+  ]
+ },
+ {
+  "title": "Animating",
+  "items": [
+   {
+    "id": "animations",
+    "k": "create write fade move rotate scale morph",
+    "title": "Animations"
+   },
+   {
+    "id": "timing",
+    "k": "duration ease delay then with easing",
+    "title": "Timing & easing"
+   },
+   {
+    "id": "combining",
+    "k": "all seq lag stagger",
+    "title": "Combining"
+   },
+   {
+    "id": "groups",
+    "k": "group rover move_by move_to rotate_by scale_by pivot place add_to parts",
+    "title": "Groups"
+   },
+   {
+    "id": "morphing",
+    "k": "morph transform_into",
+    "title": "Morphing"
+   }
+  ]
+ },
+ {
+  "title": "Layout & look",
+  "items": [
+   {
+    "id": "layout",
+    "k": "put tag heading pixel screen",
+    "title": "Layout helpers"
+   },
+   {
+    "id": "themes",
+    "k": "theme dark chalkboard blueprint sepia terminal light custom background colours",
+    "title": "Themes"
+   },
+   {
+    "id": "look",
+    "k": "sketch clean wobble roughness hatch",
+    "title": "The look"
+   },
+   {
+    "id": "turning",
+    "k": "yaw rotate turn camera pick action svg pixel_ratio",
+    "title": "Turning & picking"
+   }
+  ]
+ },
+ {
+  "title": "On the web",
+  "items": [
+   {
+    "id": "web",
+    "k": "wasm browser typescript live interactive",
+    "title": "Overview & setup"
+   },
+   {
+    "id": "web-figure",
+    "k": "json spec objects timeline builders",
+    "title": "Describing a figure"
+   },
+   {
+    "id": "web-interaction",
+    "k": "drag turn hover click action pick keyboard",
+    "title": "Turning & clicking"
+   },
+   {
+    "id": "web-components",
+    "k": "element react player canvas events",
+    "title": "Components"
+   },
+   {
+    "id": "web-figures",
+    "k": "library components inbox rocket gears servers catalog react empty states errors loaders",
+    "title": "Component library"
+   },
+   {
+    "id": "web-posters",
+    "k": "svg png poster export static fallback",
+    "title": "Posters (SVG, PNG)"
+   },
+   {
+    "id": "web-notes",
+    "k": "retina pixel ratio performance limits",
+    "title": "Notes & limits"
+   }
+  ]
+ },
+ {
+  "title": "Output",
+  "items": [
+   {
+    "id": "rendering",
+    "k": "render mp4 gif png webm still",
+    "title": "Rendering"
+   },
+   {
+    "id": "recipes",
+    "k": "avatar scene example",
+    "title": "Recipes"
+   },
+   {
+    "id": "agents",
+    "k": "claude skill ai",
+    "title": "Using it with agents"
+   }
+  ]
+ },
+ {
+  "title": "Reference",
+  "items": [
+   {
+    "id": "cheat-sheet",
+    "k": "api all",
+    "title": "Cheat sheet"
+   },
+   {
+    "id": "troubleshooting",
+    "k": "error panic fix",
+    "title": "Troubleshooting"
+   },
+   {
+    "id": "limitations",
+    "k": "",
+    "title": "Limitations"
+   }
+  ]
+ }
+]
